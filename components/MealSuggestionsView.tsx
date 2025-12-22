@@ -3,29 +3,39 @@ import React, { useState } from 'react';
 import { Meal, DailyLog } from '../types';
 import { 
   Sparkles, Clock, Zap, Plus, CheckCircle, ChevronRight, 
-  BookOpen, Utensils, ChefHat, PartyPopper, X, RotateCcw, Trash2
+  BookOpen, Utensils, ChefHat, PartyPopper, X, RotateCcw, Trash2, ShoppingCart, Info
 } from 'lucide-react';
 
 interface MealSuggestionsViewProps {
   suggestions: any[];
   dailyLog: DailyLog;
   activeCookingMeal: Meal | null;
-  onAddMeal: (meal: any) => void;
+  onAddMeal: (meal: any, shouldGoShopping: boolean) => void;
   onRemoveMeal: (name: string) => void;
+  onRegenerate: () => void;
 }
 
-const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, dailyLog, activeCookingMeal, onAddMeal, onRemoveMeal }) => {
+const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, dailyLog, activeCookingMeal, onAddMeal, onRemoveMeal, onRegenerate }) => {
   const [selected, setSelected] = useState<any | null>(null);
+  const [confirmShopping, setConfirmShopping] = useState<any | null>(null);
   const [showToast, setShowToast] = useState<'add' | 'remove' | null>(null);
 
   const isLoggedOrActive = (name: string) => 
     dailyLog.meals.some(m => m.name.toLowerCase() === name.toLowerCase()) || 
     activeCookingMeal?.name.toLowerCase() === name.toLowerCase();
 
-  const handleAdd = (meal: any) => {
-    onAddMeal(meal);
-    setShowToast('add');
-    setTimeout(() => setShowToast(null), 3000);
+  const handleSelection = (meal: any) => {
+    setConfirmShopping(meal);
+  };
+
+  const finalizeSelection = (shouldGoShopping: boolean) => {
+    if (confirmShopping) {
+      onAddMeal(confirmShopping, shouldGoShopping);
+      setConfirmShopping(null);
+      setSelected(null);
+      setShowToast('add');
+      setTimeout(() => setShowToast(null), 3000);
+    }
   };
 
   const handleCancel = (e: React.MouseEvent, name: string) => {
@@ -36,14 +46,45 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
   };
 
   return (
-    <div className="px-6 py-6 space-y-8 animate-in slide-in-from-right duration-500 pb-20">
+    <div className="px-6 py-6 space-y-8 animate-in slide-in-from-right duration-500 pb-28">
       {/* Toast Notification */}
       {showToast && (
         <div className={`fixed top-24 left-1/2 -translate-x-1/2 ${showToast === 'add' ? 'bg-emerald-600' : 'bg-red-500'} text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-2 z-[110] animate-bounce`}>
           {showToast === 'add' ? <PartyPopper size={18} /> : <RotateCcw size={18} />}
           <span className="text-xs font-bold">
-            {showToast === 'add' ? 'Chuẩn bị đi chợ thôi!' : 'Đã hủy món ăn'}
+            {showToast === 'add' ? 'Đã ghi nhận lựa chọn!' : 'Đã hủy món ăn'}
           </span>
+        </div>
+      )}
+
+      {/* Go Shopping Confirmation Modal */}
+      {confirmShopping && (
+        <div className="fixed inset-0 bg-emerald-950/80 backdrop-blur-md z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
+           <div className="bg-white rounded-[40px] w-full max-w-sm p-8 space-y-8 shadow-2xl animate-in zoom-in duration-300">
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl mx-auto flex items-center justify-center">
+                 <ShoppingCart size={40} />
+              </div>
+              <div className="text-center space-y-3">
+                 <h3 className="text-xl font-black text-emerald-900 leading-tight">Đi chợ ngay?</h3>
+                 <p className="text-sm font-medium text-gray-500 leading-relaxed">
+                    Bạn đang thiếu {confirmShopping.ingredientsMissing?.length || 0} nguyên liệu cho món <b>{confirmShopping.name}</b>. Bạn có muốn đi chợ mua ngay không?
+                 </p>
+              </div>
+              <div className="space-y-3">
+                 <button 
+                   onClick={() => finalizeSelection(true)}
+                   className="w-full py-5 bg-emerald-600 text-white font-black rounded-3xl shadow-xl shadow-emerald-100 active:scale-95 transition-all text-xs uppercase"
+                 >
+                    Có, đi chợ ngay
+                 </button>
+                 <button 
+                   onClick={() => finalizeSelection(false)}
+                   className="w-full py-5 bg-gray-100 text-gray-400 font-black rounded-3xl active:scale-95 transition-all text-xs uppercase"
+                 >
+                    Để sau, về trang chủ
+                 </button>
+              </div>
+           </div>
         </div>
       )}
 
@@ -122,12 +163,11 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
               ) : (
                 <button 
                   onClick={() => {
-                    handleAdd(selected);
-                    setSelected(null);
+                    handleSelection(selected);
                   }}
                   className="w-full py-5 font-bold rounded-3xl shadow-xl active:scale-95 transition-all text-sm uppercase flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-emerald-100"
                 >
-                  Chọn nấu món này & Đi chợ
+                  Chọn nấu món này
                 </button>
               )}
            </div>
@@ -139,7 +179,7 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
         <h2 className="text-2xl font-bold text-emerald-900 tracking-tight flex items-center gap-2">
           <Sparkles className="text-emerald-500" /> Thực đơn gợi ý
         </h2>
-        <p className="text-sm text-gray-500 font-medium">Chọn một món để bắt đầu quy trình đi chợ và nấu ăn.</p>
+        <p className="text-sm text-gray-500 font-medium">Fomi đã thiết kế 3 phương án tuyệt vời dựa trên nguyên liệu của bạn.</p>
       </section>
 
       {/* List Suggestions */}
@@ -200,13 +240,32 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
         })}
       </div>
 
+      {/* Satisfaction Check */}
+      <section className="bg-white p-8 rounded-[40px] border border-gray-100 space-y-6 shadow-sm">
+         <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center">
+               <Info size={24} />
+            </div>
+            <div>
+               <h4 className="font-black text-emerald-900 text-sm">Chưa chọn được món ưng ý?</h4>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fomi có thể gợi ý lại</p>
+            </div>
+         </div>
+         <button 
+           onClick={onRegenerate}
+           className="w-full py-4 bg-emerald-50 text-emerald-600 font-black rounded-3xl flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all text-xs uppercase"
+         >
+            <RotateCcw size={16} /> Gợi ý món khác cho tôi
+         </button>
+      </section>
+
       {/* Footer Info */}
       <section className="bg-emerald-50 p-6 rounded-[32px] border border-emerald-100 flex items-center gap-4">
          <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
             <BookOpen size={20} />
          </div>
          <p className="text-xs font-semibold text-emerald-900 leading-relaxed">
-            Chọn món ăn sẽ dẫn bạn đến danh sách đi chợ. Bạn có thể hủy lựa chọn ngay tại đây.
+            Mọi lựa chọn của bạn đều được lưu lại. Bạn có thể thay đổi bất cứ lúc nào.
          </p>
       </section>
     </div>

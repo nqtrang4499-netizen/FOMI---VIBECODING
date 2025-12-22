@@ -9,7 +9,7 @@ import {
 
 interface IngredientSelectorProps {
   profile: UserProfile;
-  onResults: (results: any[]) => void;
+  onResults: (results: any[], usedIngredients: IngredientInput[]) => void;
 }
 
 const COMMON_TAGS = [
@@ -58,7 +58,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
       isMandatory: available.includes(w)
     }));
     const results = await getDishesFromIngredients(profile, ingredients);
-    onResults(results);
+    onResults(results, ingredients);
     setLoading(false);
   };
 

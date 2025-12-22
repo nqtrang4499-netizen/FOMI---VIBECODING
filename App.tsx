@@ -26,6 +26,7 @@ const App: React.FC = () => {
   
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [activeCookingMeal, setActiveCookingMeal] = useState<Meal | null>(null);
+  const [lastUsedIngredients, setLastUsedIngredients] = useState<IngredientInput[]>([]);
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('fomi_profile');
@@ -34,12 +35,15 @@ const App: React.FC = () => {
     const savedLog = localStorage.getItem('fomi_daily_log');
     const savedSuggestions = localStorage.getItem('fomi_last_suggestions');
     const savedCooking = localStorage.getItem('fomi_active_cooking');
+    const savedIngs = localStorage.getItem('fomi_last_ings');
     
     if (savedAuth) setIsLoggedIn(true);
     if (savedProfile) setUserProfile(JSON.parse(savedProfile));
     if (savedCart) setShoppingCart(JSON.parse(savedCart));
     if (savedSuggestions) setAiSuggestions(JSON.parse(savedSuggestions));
     if (savedCooking) setActiveCookingMeal(JSON.parse(savedCooking));
+    if (savedIngs) setLastUsedIngredients(JSON.parse(savedIngs));
+    
     if (savedLog) {
       const parsedLog = JSON.parse(savedLog);
       if (parsedLog.date === new Date().toISOString().split('T')[0]) {
@@ -59,6 +63,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('fomi_last_suggestions', JSON.stringify(aiSuggestions));
   }, [aiSuggestions]);
+
+  useEffect(() => {
+    localStorage.setItem('fomi_last_ings', JSON.stringify(lastUsedIngredients));
+  }, [lastUsedIngredients]);
 
   useEffect(() => {
     if (activeCookingMeal) {
@@ -86,7 +94,7 @@ const App: React.FC = () => {
     setActiveCookingMeal(null);
   };
 
-  const startPreparingMeal = (meal: any) => {
+  const startPreparingMeal = (meal: any, shouldGoShopping: boolean) => {
     const newMeal: Meal = {
       id: Math.random().toString(36).substr(2, 9),
       name: meal.name,
@@ -120,7 +128,14 @@ const App: React.FC = () => {
     }
 
     setActiveCookingMeal(newMeal);
-    setCurrentView('shopping');
+    
+    if (shouldGoShopping && meal.ingredientsMissing?.length > 0) {
+      setCurrentView('shopping');
+    } else if (shouldGoShopping && meal.ingredientsMissing?.length === 0) {
+      setCurrentView('cooking-progress');
+    } else {
+      setCurrentView('home');
+    }
   };
 
   const finalizeMealRecord = (meal: Meal) => {
@@ -156,6 +171,7 @@ const App: React.FC = () => {
   const handleBack = () => {
     if (currentView === 'cooking-progress') setCurrentView('shopping');
     else if (currentView === 'shopping' && activeCookingMeal) setCurrentView('meal-suggestions');
+    else if (currentView === 'meal-suggestions') setCurrentView('select-ingredients');
     else setCurrentView('home');
   };
 
@@ -180,8 +196,9 @@ const App: React.FC = () => {
       {currentView === 'select-ingredients' && (
         <IngredientSelector 
           profile={userProfile}
-          onResults={(results) => {
+          onResults={(results, usedIngs) => {
             setAiSuggestions(results);
+            setLastUsedIngredients(usedIngs);
             setCurrentView('meal-suggestions');
           }}
         />
@@ -193,6 +210,7 @@ const App: React.FC = () => {
           activeCookingMeal={activeCookingMeal}
           onAddMeal={startPreparingMeal}
           onRemoveMeal={cancelMealSelection}
+          onRegenerate={() => setCurrentView('select-ingredients')}
         />
       )}
       {currentView === 'shopping' && (
