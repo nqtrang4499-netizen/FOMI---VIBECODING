@@ -11,6 +11,7 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'shopping' | 'history'>('home');
+  const [shoppingCart, setShoppingCart] = useState<ShoppingItem[]>([]);
   const [dailyLog, setDailyLog] = useState<DailyLog>({
     date: new Date().toISOString().split('T')[0],
     meals: [],
@@ -21,14 +22,17 @@ const App: React.FC = () => {
   useEffect(() => {
     const savedProfile = localStorage.getItem('fomi_profile');
     const savedAuth = localStorage.getItem('fomi_auth');
+    const savedCart = localStorage.getItem('fomi_shopping_cart');
     
-    if (savedAuth) {
-      setIsLoggedIn(true);
-    }
-    if (savedProfile) {
-      setUserProfile(JSON.parse(savedProfile));
-    }
+    if (savedAuth) setIsLoggedIn(true);
+    if (savedProfile) setUserProfile(JSON.parse(savedProfile));
+    if (savedCart) setShoppingCart(JSON.parse(savedCart));
   }, []);
+
+  // Save cart when updated
+  useEffect(() => {
+    localStorage.setItem('fomi_shopping_cart', JSON.stringify(shoppingCart));
+  }, [shoppingCart]);
 
   const handleLogin = (email: string) => {
     setIsLoggedIn(true);
@@ -41,8 +45,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('fomi_auth');
-    localStorage.removeItem('fomi_profile');
+    localStorage.clear();
     setIsLoggedIn(false);
     setUserProfile(null);
   };
@@ -55,20 +58,30 @@ const App: React.FC = () => {
     if (totalCals > 1800) status = 'Over';
     else if (totalCals < 1000) status = 'Under';
 
-    setDailyLog({
-      ...dailyLog,
-      meals: newMeals,
-      compensationStatus: status
-    });
+    setDailyLog({ ...dailyLog, meals: newMeals, compensationStatus: status });
+
+    // Tự động thêm nguyên liệu thiếu vào giỏ hàng
+    if (meal.ingredientsMissing && meal.ingredientsMissing.length > 0) {
+      const newItems: ShoppingItem[] = meal.ingredientsMissing.map(name => ({
+        id: Math.random().toString(36).substr(2, 9),
+        name,
+        category: 'Thực phẩm',
+        amount: '1 phần',
+        isProtein: false,
+        price: 25000, // Giá giả định
+        fromMeal: meal.name,
+        isBought: false
+      }));
+      setShoppingCart(prev => [...prev, ...newItems]);
+    }
   };
 
-  if (!isLoggedIn) {
-    return <Auth onLogin={handleLogin} />;
-  }
+  const updateCart = (newCart: ShoppingItem[]) => {
+    setShoppingCart(newCart);
+  };
 
-  if (!userProfile) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
-  }
+  if (!isLoggedIn) return <Auth onLogin={handleLogin} />;
+  if (!userProfile) return <Onboarding onComplete={handleOnboardingComplete} />;
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout}>
@@ -80,7 +93,11 @@ const App: React.FC = () => {
         />
       )}
       {activeTab === 'shopping' && (
-        <ShoppingList profile={userProfile} />
+        <ShoppingList 
+          profile={userProfile} 
+          cart={shoppingCart} 
+          setCart={updateCart}
+        />
       )}
       {activeTab === 'history' && (
         <div className="p-6">

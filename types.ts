@@ -13,6 +13,11 @@ export interface UserProfile {
   goal: 'Giảm cân' | 'Giữ dáng' | 'Tăng cơ';
 }
 
+export interface IngredientInput {
+  name: string;
+  isMandatory: boolean;
+}
+
 export interface Meal {
   id: string;
   name: string;
@@ -20,9 +25,10 @@ export interface Meal {
   isEatOut: boolean;
   calories: number;
   description: string;
-  hackTip?: string; // Specific advice for eating out
-  compensationAdvice?: string; // What to do later if you eat this
+  hackTip?: string;
+  compensationAdvice?: string;
   ingredients?: string[];
+  ingredientsMissing?: string[];
 }
 
 export interface DailyLog {
@@ -32,9 +38,22 @@ export interface DailyLog {
 }
 
 export interface ShoppingItem {
+  id: string;
   name: string;
   category: string;
   amount: string;
   isProtein: boolean;
-  plannedUsage?: string[]; // How this bulk item is used across days
+  price?: number;
+  fromMeal?: string;
+  isBought: boolean;
+}
+
+export interface MarketLocation {
+  name: string;
+  address: string;
+  uri: string;
+  rating?: string;
+  deliveryTime: string;
+  pickupTime: string;
+  distance: string;
 }
