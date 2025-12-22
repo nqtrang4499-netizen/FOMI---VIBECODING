@@ -7,10 +7,12 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 export const getMealSuggestions = async (profile: UserProfile, previousMeals: Meal[]) => {
   const prompt = `
     Bạn là chuyên gia dinh dưỡng Fomi, tập trung vào "Healthy Thỏa Hiệp" (Ăn ngon nhưng có điều chỉnh).
-    Người dùng: Miền ${profile.region}, ${profile.goal}.
+    Người dùng: Miền ${profile.region}, mục tiêu ${profile.goal}.
+    Sở thích/Thành phần ưu tiên: ${profile.preferences.join(", ") || "Không cụ thể"}.
+    ${profile.isLactoseIntolerant ? "QUAN TRỌNG: Người dùng dị ứng Lactose, KHÔNG gợi ý món có sữa/phô mai." : ""}
     Bữa đã ăn: ${previousMeals.map(m => m.name).join(", ")}.
 
-    Hãy gợi ý 1 bữa ăn tiếp theo (Bữa sáng/trưa/tối) ĐƠN GIẢN, dễ tìm.
+    Hãy gợi ý 1 bữa ăn tiếp theo (Bữa sáng/trưa/tối) ĐƠN GIẢN, dễ tìm, phù hợp với sở thích của họ.
     Cung cấp:
     1. homeMeal: Món tự nấu (nguyên liệu đơn giản).
     2. eatOutMeal: Món ăn ngoài kèm "hackTip". 
@@ -67,6 +69,8 @@ export const getMealSuggestions = async (profile: UserProfile, previousMeals: Me
 
 export const getSmartShoppingList = async (profile: UserProfile) => {
   const prompt = `Tạo danh sách đi chợ cho 3 ngày tới cho người dùng ở miền ${profile.region}, mục tiêu ${profile.goal}.
+  Sở thích nguyên liệu: ${profile.preferences.join(", ") || "Đa dạng"}.
+  ${profile.isLactoseIntolerant ? "Không bao gồm sản phẩm từ sữa." : ""}
   Tập trung tối ưu phần Thịt/Hải sản (Protein) để mua 1 lần dùng được cho nhiều món khác nhau, tránh lãng phí.
   Danh sách bao gồm tên thực phẩm, đơn vị (kg, gram, bó, quả) và danh mục.`;
 

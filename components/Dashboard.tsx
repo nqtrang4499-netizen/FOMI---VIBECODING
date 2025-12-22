@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, DailyLog, Meal } from '../types';
 import { getMealSuggestions } from '../services/geminiService';
-import { Sparkles, Utensils, Store, Zap, CheckCircle, Flame, Activity } from 'lucide-react';
+import { Sparkles, Utensils, Store, Zap, CheckCircle, Flame, Activity, ExternalLink } from 'lucide-react';
 
 interface DashboardProps {
   profile: UserProfile;
@@ -39,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onAddMeal }) =
         </h2>
       </section>
 
-      {/* 2. Quick Stats Dashboard (Restructured above Suggestions) */}
+      {/* 2. Quick Stats Dashboard */}
       <section className="bg-white rounded-[32px] p-6 shadow-sm border border-orange-50 space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -77,7 +77,6 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onAddMeal }) =
           </div>
         </div>
 
-        {/* Visual Progress Bar */}
         <div className="space-y-2">
           <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
             <div 
@@ -117,7 +116,6 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onAddMeal }) =
           </div>
         ) : suggestion ? (
           <div className="space-y-4">
-            {/* Key points logic bullets */}
             {suggestion.keyPoints && (
               <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100/50">
                 <ul className="space-y-2">
@@ -186,6 +184,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onAddMeal }) =
                 </p>
               </div>
 
+              {/* Enhanced Select Button for Eat Out */}
               <button 
                 onClick={() => onAddMeal({
                   id: Math.random().toString(),
@@ -195,10 +194,10 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onAddMeal }) =
                   calories: suggestion.eatOutMeal.calories,
                   description: suggestion.eatOutMeal.hackTip
                 })}
-                className="w-full mt-6 py-3.5 bg-white text-gray-900 font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+                className="w-full mt-6 py-3.5 bg-white text-gray-900 font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 group-hover:bg-orange-50"
               >
                 <Store size={18} />
-                Lưu mẹo & Ăn
+                Chọn ăn ngoài
               </button>
             </div>
           </div>
