@@ -10,6 +10,7 @@ export interface UserProfile {
   region: Region;
   isLactoseIntolerant: boolean;
   preferences: string[];
+  flavors: string[];
   goal: 'Giảm cân' | 'Giữ dáng' | 'Tăng cơ';
 }
 
@@ -26,8 +27,10 @@ export interface Meal {
   calories: number;
   description: string;
   hackTip?: string;
-  compensationAdvice?: string;
-  ingredients?: string[];
+  estimatedTime?: string;
+  difficulty?: string;
+  recipeSteps?: string[];
+  ingredientsFound?: string[];
   ingredientsMissing?: string[];
 }
 
@@ -46,14 +49,4 @@ export interface ShoppingItem {
   price?: number;
   fromMeal?: string;
   isBought: boolean;
-}
-
-export interface MarketLocation {
-  name: string;
-  address: string;
-  uri: string;
-  rating?: string;
-  deliveryTime: string;
-  pickupTime: string;
-  distance: string;
 }

@@ -1,12 +1,9 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { UserProfile, Meal, IngredientInput, MarketLocation } from "../types";
+import { UserProfile, Meal, IngredientInput } from "../types";
 
 const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-/**
- * NHẬN DIỆN NGUYÊN LIỆU THÔ TỪ ẢNH CHỤP TỦ LẠNH
- */
 export const recognizeIngredientsFromPhoto = async (base64Image: string) => {
   const ai = getAIClient();
   const prompt = `Bạn là trợ lý Fomi. Hãy nhìn ảnh chụp tủ lạnh và liệt kê thực phẩm thấy được. 
@@ -45,14 +42,10 @@ export const recognizeIngredientsFromPhoto = async (base64Image: string) => {
     });
     return JSON.parse(response.text).ingredients;
   } catch (error) {
-    console.error("Lỗi nhận diện nguyên liệu:", error);
     return [];
   }
 };
 
-/**
- * TÌM CỬA HÀNG VÀ ƯỚC TÍNH GIÁ CẢ
- */
 export const getMarketDetails = async (ingredients: string[], latitude?: number, longitude?: number) => {
   const ai = getAIClient();
   const prompt = `Tôi cần mua: ${ingredients.join(", ")}. Tìm nơi bán gần nhất, ước tính giá VNĐ và thời gian nhận hàng.`;
@@ -78,9 +71,6 @@ export const getMarketDetails = async (ingredients: string[], latitude?: number,
   }
 };
 
-/**
- * TẠO ẢNH MÓN ĂN PREMIUM
- */
 export const generateMealImage = async (prompt: string, size: "1K" | "2K" | "4K" = "1K") => {
   const ai = getAIClient();
   try {
@@ -98,13 +88,11 @@ export const generateMealImage = async (prompt: string, size: "1K" | "2K" | "4K"
   }
 };
 
-/**
- * GỢI Ý MÓN ĂN TỪ NGUYÊN LIỆU CÓ SẴN
- */
 export const getDishesFromIngredients = async (profile: UserProfile, ingredients: IngredientInput[]) => {
   const ai = getAIClient();
   const prompt = `Gợi ý 3 món ăn ngon miền ${profile.region} từ nguyên liệu: ${ingredients.map(i => i.name).join(", ")}. 
-  Trả về JSON bao gồm tên món, mô tả, mẹo nấu ăn và danh sách nguyên liệu thiếu kèm giá.`;
+  Dựa trên khẩu vị: ${profile.flavors.join(", ")} và mục tiêu: ${profile.goal}.
+  Trả về JSON bao gồm tên món, mô tả, mẹo nấu ăn, thời gian hoàn thành (ví dụ: 15 phút), độ khó, các bước thực hiện và danh sách nguyên liệu thiếu kèm giá.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -121,8 +109,9 @@ export const getDishesFromIngredients = async (profile: UserProfile, ingredients
                 type: Type.OBJECT,
                 properties: {
                   name: { type: Type.STRING },
-                  comboDishes: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Thành phần món ăn" },
                   description: { type: Type.STRING },
+                  estimatedTime: { type: Type.STRING },
+                  difficulty: { type: Type.STRING },
                   ingredientsFound: { type: Type.ARRAY, items: { type: Type.STRING } },
                   ingredientsMissing: {
                     type: Type.ARRAY,
@@ -139,7 +128,7 @@ export const getDishesFromIngredients = async (profile: UserProfile, ingredients
                   hackTip: { type: Type.STRING },
                   recipeSteps: { type: Type.ARRAY, items: { type: Type.STRING } }
                 },
-                required: ["name", "comboDishes", "description", "ingredientsFound", "ingredientsMissing", "calories", "hackTip", "recipeSteps"]
+                required: ["name", "description", "estimatedTime", "difficulty", "ingredientsFound", "ingredientsMissing", "calories", "hackTip", "recipeSteps"]
               }
             }
           },
@@ -153,9 +142,6 @@ export const getDishesFromIngredients = async (profile: UserProfile, ingredients
   }
 };
 
-/**
- * NHẬN DIỆN MÓN ĂN QUA CAMERA
- */
 export const recognizeMealFromPhoto = async (base64Image: string) => {
   const ai = getAIClient();
   try {

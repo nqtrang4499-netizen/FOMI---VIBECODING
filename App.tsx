@@ -1,42 +1,76 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserProfile, Region, Meal, DailyLog, ShoppingItem } from './types';
+import { UserProfile, Region, Meal, DailyLog, ShoppingItem, IngredientInput } from './types';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
 import ShoppingList from './components/ShoppingList';
+import DailyLogView from './components/DailyLogView';
+import IngredientSelector from './components/IngredientSelector';
+import MealSuggestionsView from './components/MealSuggestionsView';
+import CookingProgressView from './components/CookingProgressView';
 import Auth from './components/Auth';
 import { Layout } from './components/Layout';
+
+type ViewState = 'home' | 'shopping' | 'history' | 'select-ingredients' | 'meal-suggestions' | 'cooking-progress';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'home' | 'shopping' | 'history'>('home');
+  const [currentView, setCurrentView] = useState<ViewState>('home');
   const [shoppingCart, setShoppingCart] = useState<ShoppingItem[]>([]);
   const [dailyLog, setDailyLog] = useState<DailyLog>({
     date: new Date().toISOString().split('T')[0],
     meals: [],
     compensationStatus: 'Balanced'
   });
+  
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [activeCookingMeal, setActiveCookingMeal] = useState<Meal | null>(null);
 
-  // Load from local storage
   useEffect(() => {
     const savedProfile = localStorage.getItem('fomi_profile');
     const savedAuth = localStorage.getItem('fomi_auth');
     const savedCart = localStorage.getItem('fomi_shopping_cart');
+    const savedLog = localStorage.getItem('fomi_daily_log');
+    const savedSuggestions = localStorage.getItem('fomi_last_suggestions');
+    const savedCooking = localStorage.getItem('fomi_active_cooking');
     
     if (savedAuth) setIsLoggedIn(true);
     if (savedProfile) setUserProfile(JSON.parse(savedProfile));
     if (savedCart) setShoppingCart(JSON.parse(savedCart));
+    if (savedSuggestions) setAiSuggestions(JSON.parse(savedSuggestions));
+    if (savedCooking) setActiveCookingMeal(JSON.parse(savedCooking));
+    if (savedLog) {
+      const parsedLog = JSON.parse(savedLog);
+      if (parsedLog.date === new Date().toISOString().split('T')[0]) {
+        setDailyLog(parsedLog);
+      }
+    }
   }, []);
 
-  // Save cart when updated
   useEffect(() => {
     localStorage.setItem('fomi_shopping_cart', JSON.stringify(shoppingCart));
   }, [shoppingCart]);
 
-  const handleLogin = (email: string) => {
+  useEffect(() => {
+    localStorage.setItem('fomi_daily_log', JSON.stringify(dailyLog));
+  }, [dailyLog]);
+
+  useEffect(() => {
+    localStorage.setItem('fomi_last_suggestions', JSON.stringify(aiSuggestions));
+  }, [aiSuggestions]);
+
+  useEffect(() => {
+    if (activeCookingMeal) {
+      localStorage.setItem('fomi_active_cooking', JSON.stringify(activeCookingMeal));
+    } else {
+      localStorage.removeItem('fomi_active_cooking');
+    }
+  }, [activeCookingMeal]);
+
+  const handleLogin = (id: string) => {
     setIsLoggedIn(true);
-    localStorage.setItem('fomi_auth', email);
+    localStorage.setItem('fomi_auth', id);
   };
 
   const handleOnboardingComplete = (profile: UserProfile) => {
@@ -48,75 +82,143 @@ const App: React.FC = () => {
     localStorage.clear();
     setIsLoggedIn(false);
     setUserProfile(null);
+    setCurrentView('home');
+    setActiveCookingMeal(null);
   };
 
-  const addMeal = (meal: any) => {
+  const startPreparingMeal = (meal: any) => {
     const newMeal: Meal = {
-      id: meal.id,
+      id: Math.random().toString(36).substr(2, 9),
       name: meal.name,
-      type: meal.type,
-      isEatOut: meal.isEatOut,
+      type: meal.type || 'Lunch',
+      isEatOut: meal.isEatOut || false,
       calories: meal.calories,
       description: meal.description,
       hackTip: meal.hackTip,
-      ingredientsMissing: meal.ingredientsMissing?.map((i: any) => i.name)
+      estimatedTime: meal.estimatedTime,
+      difficulty: meal.difficulty,
+      recipeSteps: meal.recipeSteps,
+      ingredientsFound: meal.ingredientsFound,
+      ingredientsMissing: meal.ingredientsMissing?.map((i: any) => typeof i === 'string' ? i : i.name)
     };
 
-    const newMeals = [...dailyLog.meals, newMeal];
-    const totalCals = newMeals.reduce((acc, m) => acc + m.calories, 0);
-    
-    let status: 'Under' | 'Balanced' | 'Over' = 'Balanced';
-    if (totalCals > 1800) status = 'Over';
-    else if (totalCals < 1000) status = 'Under';
-
-    setDailyLog({ ...dailyLog, meals: newMeals, compensationStatus: status });
-
-    // Tự động thêm nguyên liệu thiếu vào giỏ hàng với giá từ AI
+    // Tạo giỏ hàng cho nguyên liệu thiếu
     if (meal.ingredientsMissing && meal.ingredientsMissing.length > 0) {
       const newItems: ShoppingItem[] = meal.ingredientsMissing.map((i: any) => ({
         id: Math.random().toString(36).substr(2, 9),
-        name: i.name,
+        name: typeof i === 'string' ? i : i.name,
         category: 'Thực phẩm',
         amount: '1 phần',
-        isProtein: i.name.toLowerCase().includes('thịt') || i.name.toLowerCase().includes('cá') || i.name.toLowerCase().includes('trứng'),
+        isProtein: false,
         price: i.estimatedPrice || 20000,
         fromMeal: meal.name,
         isBought: false
       }));
-      setShoppingCart(prev => [...prev, ...newItems]);
+      setShoppingCart(newItems);
+    } else {
+      setShoppingCart([]);
     }
+
+    setActiveCookingMeal(newMeal);
+    setCurrentView('shopping');
   };
 
-  const updateCart = (newCart: ShoppingItem[]) => {
-    setShoppingCart(newCart);
+  const finalizeMealRecord = (meal: Meal) => {
+    if (dailyLog.meals.some(m => m.name.toLowerCase() === meal.name.toLowerCase())) return;
+    const newMeals = [...dailyLog.meals, meal];
+    updateLog(newMeals);
+    setActiveCookingMeal(null);
+    setCurrentView('home');
+  };
+
+  const cancelMealSelection = (name: string) => {
+    if (activeCookingMeal?.name.toLowerCase() === name.toLowerCase()) {
+      setActiveCookingMeal(null);
+      setShoppingCart([]);
+    }
+    const newMeals = dailyLog.meals.filter(m => m.name.toLowerCase() !== name.toLowerCase());
+    updateLog(newMeals);
+  };
+
+  const removeMealById = (mealId: string) => {
+    const newMeals = dailyLog.meals.filter(m => m.id !== mealId);
+    updateLog(newMeals);
+  };
+
+  const updateLog = (meals: Meal[]) => {
+    const totalCals = meals.reduce((acc, m) => acc + m.calories, 0);
+    let status: 'Under' | 'Balanced' | 'Over' = 'Balanced';
+    if (totalCals > 2200) status = 'Over';
+    else if (totalCals < 1200) status = 'Under';
+    setDailyLog({ ...dailyLog, meals, compensationStatus: status });
+  };
+
+  const handleBack = () => {
+    if (currentView === 'cooking-progress') setCurrentView('shopping');
+    else if (currentView === 'shopping' && activeCookingMeal) setCurrentView('meal-suggestions');
+    else setCurrentView('home');
   };
 
   if (!isLoggedIn) return <Auth onLogin={handleLogin} />;
   if (!userProfile) return <Onboarding onComplete={handleOnboardingComplete} />;
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout}>
-      {activeTab === 'home' && (
+    <Layout 
+      onLogout={handleLogout} 
+      showBack={currentView !== 'home'} 
+      onBack={handleBack}
+    >
+      {currentView === 'home' && (
         <Dashboard 
           profile={userProfile} 
           dailyLog={dailyLog} 
-          onAddMeal={addMeal}
+          onNavigate={(view) => setCurrentView(view as ViewState)}
+          hasLastSuggestions={aiSuggestions.length > 0}
+          activeCookingMeal={activeCookingMeal}
         />
       )}
-      {activeTab === 'shopping' && (
+      {currentView === 'select-ingredients' && (
+        <IngredientSelector 
+          profile={userProfile}
+          onResults={(results) => {
+            setAiSuggestions(results);
+            setCurrentView('meal-suggestions');
+          }}
+        />
+      )}
+      {currentView === 'meal-suggestions' && (
+        <MealSuggestionsView 
+          suggestions={aiSuggestions}
+          dailyLog={dailyLog}
+          activeCookingMeal={activeCookingMeal}
+          onAddMeal={startPreparingMeal}
+          onRemoveMeal={cancelMealSelection}
+        />
+      )}
+      {currentView === 'shopping' && (
         <ShoppingList 
           profile={userProfile} 
           cart={shoppingCart} 
-          setCart={updateCart}
+          setCart={setShoppingCart}
+          activeMeal={activeCookingMeal}
+          onStartCooking={() => setCurrentView('cooking-progress')}
         />
       )}
-      {activeTab === 'history' && (
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-4 text-orange-900">Nhật ký ăn uống</h2>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-orange-50">
-            <p className="text-gray-500 italic text-sm">Chuyện ăn uống của bạn và cộng đồng sẽ hiện ở đây sớm thôi!</p>
-          </div>
-        </div>
+      {currentView === 'cooking-progress' && activeCookingMeal && (
+        <CookingProgressView 
+          meal={activeCookingMeal} 
+          onComplete={() => finalizeMealRecord(activeCookingMeal)}
+          onCancel={() => {
+            setActiveCookingMeal(null);
+            setCurrentView('home');
+          }}
+        />
+      )}
+      {currentView === 'history' && (
+        <DailyLogView 
+          dailyLog={dailyLog} 
+          onRemoveMeal={removeMealById}
+        />
       )}
     </Layout>
   );

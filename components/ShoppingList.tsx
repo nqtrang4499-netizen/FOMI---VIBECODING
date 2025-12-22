@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
-import { UserProfile, ShoppingItem } from '../types';
+import { UserProfile, ShoppingItem, Meal } from '../types';
 import { getMarketDetails } from '../services/geminiService';
-import { CheckCircle2, Circle, ShoppingCart, MapPin, Package, Zap, Trash2, Loader2, Navigation, Clock, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, Circle, ShoppingCart, MapPin, Package, Zap, Trash2, Loader2, Navigation, Clock, CreditCard, ChevronDown, ChevronUp, ChefHat } from 'lucide-react';
 
 interface ShoppingListProps {
   profile: UserProfile;
   cart: ShoppingItem[];
   setCart: (cart: ShoppingItem[]) => void;
+  activeMeal?: Meal | null;
+  onStartCooking?: () => void;
 }
 
-const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart }) => {
+const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart, activeMeal, onStartCooking }) => {
   const [marketInfo, setMarketInfo] = useState<{ advice: string; links: any[] } | null>(null);
   const [loadingMarket, setLoadingMarket] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
@@ -45,13 +47,18 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart }) =
   };
 
   const totalPrice = cart.reduce((acc, item) => acc + (item.price || 0), 0);
+  const isAllBought = cart.every(item => item.isBought);
 
   return (
-    <div className="px-6 py-6 space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-24">
+    <div className="px-6 py-6 space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-32">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-emerald-900 tracking-tight">Giỏ đi chợ</h2>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Tự động tổng hợp từ Fomi</p>
+          <h2 className="text-2xl font-black text-emerald-900 tracking-tight">
+            {activeMeal ? 'Nguyên liệu cần mua' : 'Giỏ đi chợ'}
+          </h2>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            {activeMeal ? `Cho món: ${activeMeal.name}` : 'Tự động tổng hợp từ Fomi'}
+          </p>
         </div>
         <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner">
            <ShoppingCart size={24} />
@@ -60,10 +67,15 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart }) =
 
       {/* Cart Items List */}
       <section className="space-y-4">
-        {cart.length === 0 ? (
+        {cart.length === 0 && !activeMeal ? (
           <div className="bg-white border-2 border-dashed border-emerald-100 rounded-[40px] p-12 text-center space-y-3">
             <Package size={40} className="text-emerald-200 mx-auto" />
             <p className="text-sm font-bold text-emerald-900/60">Giỏ hàng đang trống!</p>
+          </div>
+        ) : cart.length === 0 && activeMeal ? (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-[32px] p-8 text-center space-y-3">
+            <CheckCircle2 size={40} className="text-emerald-500 mx-auto" />
+            <p className="text-sm font-bold text-emerald-900">Bạn đã có đủ nguyên liệu trong bếp!</p>
           </div>
         ) : (
           <div className="bg-white border border-emerald-50 rounded-[32px] overflow-hidden shadow-sm">
@@ -75,7 +87,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart }) =
                     <div className="flex items-center gap-2">
                       <span className={`font-black text-sm ${item.isBought ? 'line-through text-gray-300' : 'text-emerald-900'}`}>{item.name}</span>
                     </div>
-                    <p className="text-[10px] text-gray-400 font-bold mt-0.5">{item.price?.toLocaleString()}đ • {item.fromMeal}</p>
+                    <p className="text-[10px] text-gray-400 font-bold mt-0.5">{item.price?.toLocaleString()}đ {item.fromMeal && `• ${item.fromMeal}`}</p>
                   </div>
                 </div>
                 <button onClick={() => removeItem(item.id)} className="p-2 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
@@ -89,6 +101,19 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart }) =
           </div>
         )}
       </section>
+
+      {/* Start Cooking Floating Button */}
+      {activeMeal && (
+        <div className="fixed bottom-6 left-6 right-6 z-50">
+          <button 
+            onClick={onStartCooking}
+            className={`w-full py-5 rounded-[32px] font-black text-sm uppercase flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95 ${isAllBought ? 'bg-emerald-600 text-white animate-pulse' : 'bg-gray-100 text-gray-400'}`}
+          >
+            <ChefHat size={24} />
+            {isAllBought ? 'Bắt đầu chế biến ngay' : 'Mua đủ đồ để nấu ăn'}
+          </button>
+        </div>
+      )}
 
       {/* Market Logistics */}
       {cart.length > 0 && (
@@ -111,14 +136,14 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart }) =
            <button 
             onClick={handleFindMarkets}
             disabled={loadingMarket}
-            className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-[32px] flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95 text-sm uppercase"
+            className="w-full py-5 bg-emerald-950 text-emerald-400 font-black rounded-[32px] flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95 text-sm uppercase border border-emerald-800"
           >
             {loadingMarket ? <Loader2 size={24} className="animate-spin" /> : <MapPin size={24} />}
-            Tìm cửa hàng gần đây
+            Tìm cửa hàng bán nguyên liệu
           </button>
 
           {marketInfo && (
-            <div className="bg-white border border-emerald-50 rounded-[32px] p-6 shadow-sm space-y-4">
+            <div className="bg-white border border-emerald-50 rounded-[32px] p-6 shadow-sm space-y-4 animate-in slide-in-from-bottom-2">
               <div className="flex justify-between items-center">
                 <h4 className="font-black text-emerald-900 text-sm flex items-center gap-2">
                   <Zap size={18} className="text-emerald-500" /> Đề xuất nơi mua
