@@ -1,0 +1,7 @@
+{
+  "name": "Fomi - Trợ lý Ăn uống Healthy Thỏa Hiệp",
+  "description": "Fomi là trợ lý ăn uống Hybrid dành riêng cho người Việt, giúp bạn cân bằng giữa sở thích ăn ngon và mục tiêu sức khỏe thông qua cơ chế 'Bù trừ' và thuật toán 'Hương vị trước, Dinh dưỡng sau'.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
