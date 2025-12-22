@@ -21,6 +21,7 @@ export interface Meal {
   calories: number;
   description: string;
   hackTip?: string; // Specific advice for eating out
+  compensationAdvice?: string; // What to do later if you eat this
   ingredients?: string[];
 }
 
@@ -35,4 +36,5 @@ export interface ShoppingItem {
   category: string;
   amount: string;
   isProtein: boolean;
+  plannedUsage?: string[]; // How this bulk item is used across days
 }

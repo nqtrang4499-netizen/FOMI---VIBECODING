@@ -52,8 +52,8 @@ const App: React.FC = () => {
     const totalCals = newMeals.reduce((acc, m) => acc + m.calories, 0);
     
     let status: 'Under' | 'Balanced' | 'Over' = 'Balanced';
-    if (totalCals > 1500) status = 'Over';
-    else if (totalCals < 800) status = 'Under';
+    if (totalCals > 1800) status = 'Over';
+    else if (totalCals < 1000) status = 'Under';
 
     setDailyLog({
       ...dailyLog,
@@ -84,9 +84,9 @@ const App: React.FC = () => {
       )}
       {activeTab === 'history' && (
         <div className="p-6">
-          <h2 className="text-2xl font-bold mb-4 text-orange-900">Lịch sử ăn uống</h2>
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <p className="text-gray-500 italic">Tính năng cộng đồng & lịch sử đang được phát triển...</p>
+          <h2 className="text-2xl font-bold mb-4 text-orange-900">Nhật ký ăn uống</h2>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-orange-50">
+            <p className="text-gray-500 italic text-sm">Chuyện ăn uống của bạn và cộng đồng sẽ hiện ở đây sớm thôi!</p>
           </div>
         </div>
       )}

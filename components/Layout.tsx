@@ -21,7 +21,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
         </div>
         <button 
           onClick={() => {
-            if(confirm('Bạn có muốn đăng xuất?')) onLogout();
+            if(confirm('Bạn muốn nghỉ tay chút à? Đăng xuất nhé?')) onLogout();
           }}
           className="p-2 bg-orange-50 rounded-full text-orange-600 hover:bg-orange-100 transition-colors"
         >
@@ -38,19 +38,19 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           active={activeTab === 'home'} 
           onClick={() => setActiveTab('home')} 
           icon={<Home size={24} />} 
-          label="Home" 
+          label="Trang chủ" 
         />
         <NavButton 
           active={activeTab === 'shopping'} 
           onClick={() => setActiveTab('shopping')} 
           icon={<ShoppingBag size={24} />} 
-          label="Market" 
+          label="Đi chợ" 
         />
         <NavButton 
           active={activeTab === 'history'} 
           onClick={() => setActiveTab('history')} 
           icon={<History size={24} />} 
-          label="History" 
+          label="Nhật ký" 
         />
       </nav>
     </div>
@@ -63,6 +63,6 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
     className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-orange-500 scale-110' : 'text-gray-400'}`}
   >
     {icon}
-    <span className="text-[10px] font-medium uppercase tracking-wider">{label}</span>
+    <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
   </button>
 );
