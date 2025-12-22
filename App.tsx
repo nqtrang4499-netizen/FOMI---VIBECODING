@@ -8,10 +8,11 @@ import DailyLogView from './components/DailyLogView';
 import IngredientSelector from './components/IngredientSelector';
 import MealSuggestionsView from './components/MealSuggestionsView';
 import CookingProgressView from './components/CookingProgressView';
+import EnjoyMealView from './components/EnjoyMealView';
 import Auth from './components/Auth';
 import { Layout } from './components/Layout';
 
-type ViewState = 'home' | 'shopping' | 'history' | 'select-ingredients' | 'meal-suggestions' | 'cooking-progress';
+type ViewState = 'home' | 'shopping' | 'history' | 'select-ingredients' | 'meal-suggestions' | 'cooking-progress' | 'enjoy-meal';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -110,7 +111,6 @@ const App: React.FC = () => {
       ingredientsMissing: meal.ingredientsMissing?.map((i: any) => typeof i === 'string' ? i : i.name)
     };
 
-    // Tạo giỏ hàng cho nguyên liệu thiếu
     if (meal.ingredientsMissing && meal.ingredientsMissing.length > 0) {
       const newItems: ShoppingItem[] = meal.ingredientsMissing.map((i: any) => ({
         id: Math.random().toString(36).substr(2, 9),
@@ -131,10 +131,9 @@ const App: React.FC = () => {
     
     if (shouldGoShopping && meal.ingredientsMissing?.length > 0) {
       setCurrentView('shopping');
-    } else if (shouldGoShopping && meal.ingredientsMissing?.length === 0) {
-      setCurrentView('cooking-progress');
     } else {
-      setCurrentView('home');
+      // Nếu không đi chợ hoặc không thiếu đồ, chuyển sang nấu
+      setCurrentView('cooking-progress');
     }
   };
 
@@ -142,8 +141,8 @@ const App: React.FC = () => {
     if (dailyLog.meals.some(m => m.name.toLowerCase() === meal.name.toLowerCase())) return;
     const newMeals = [...dailyLog.meals, meal];
     updateLog(newMeals);
-    setActiveCookingMeal(null);
-    setCurrentView('home');
+    // Chuyển sang màn hình chúc mừng trước khi về Home
+    setCurrentView('enjoy-meal');
   };
 
   const cancelMealSelection = (name: string) => {
@@ -162,17 +161,35 @@ const App: React.FC = () => {
 
   const updateLog = (meals: Meal[]) => {
     const totalCals = meals.reduce((acc, m) => acc + m.calories, 0);
+    const calorieGoal = userProfile?.calorieGoal || 2000;
+    
     let status: 'Under' | 'Balanced' | 'Over' = 'Balanced';
-    if (totalCals > 2200) status = 'Over';
-    else if (totalCals < 1200) status = 'Under';
+    if (totalCals > calorieGoal + 100) status = 'Over';
+    else if (totalCals < calorieGoal - 100) status = 'Under';
+    
     setDailyLog({ ...dailyLog, meals, compensationStatus: status });
   };
 
   const handleBack = () => {
-    if (currentView === 'cooking-progress') setCurrentView('shopping');
+    if (currentView === 'cooking-progress') {
+       // Nếu đang nấu mà quay lại, hỏi xem muốn đi chợ hay về Home
+       if (shoppingCart.length > 0) setCurrentView('shopping');
+       else setCurrentView('home');
+    }
     else if (currentView === 'shopping' && activeCookingMeal) setCurrentView('meal-suggestions');
     else if (currentView === 'meal-suggestions') setCurrentView('select-ingredients');
+    else if (currentView === 'enjoy-meal') setCurrentView('home');
     else setCurrentView('home');
+  };
+
+  const handleResumeCooking = () => {
+    if (!activeCookingMeal) return;
+    // Ưu tiên đi chợ nếu còn đồ chưa mua, nhưng vẫn cho phép nhảy thẳng vào nấu
+    if (shoppingCart.some(i => !i.isBought)) {
+      setCurrentView('shopping');
+    } else {
+      setCurrentView('cooking-progress');
+    }
   };
 
   if (!isLoggedIn) return <Auth onLogin={handleLogin} />;
@@ -181,14 +198,17 @@ const App: React.FC = () => {
   return (
     <Layout 
       onLogout={handleLogout} 
-      showBack={currentView !== 'home'} 
+      showBack={currentView !== 'home' && currentView !== 'enjoy-meal'} 
       onBack={handleBack}
     >
       {currentView === 'home' && (
         <Dashboard 
           profile={userProfile} 
           dailyLog={dailyLog} 
-          onNavigate={(view) => setCurrentView(view as ViewState)}
+          onNavigate={(view) => {
+            if (view === 'resume-cooking') handleResumeCooking();
+            else setCurrentView(view as ViewState);
+          }}
           hasLastSuggestions={aiSuggestions.length > 0}
           activeCookingMeal={activeCookingMeal}
         />
@@ -232,8 +252,19 @@ const App: React.FC = () => {
           }}
         />
       )}
+      {currentView === 'enjoy-meal' && activeCookingMeal && (
+        <EnjoyMealView 
+          meal={activeCookingMeal} 
+          onFinish={() => {
+            setActiveCookingMeal(null);
+            setShoppingCart([]);
+            setCurrentView('home');
+          }} 
+        />
+      )}
       {currentView === 'history' && (
         <DailyLogView 
+          profile={userProfile}
           dailyLog={dailyLog} 
           onRemoveMeal={removeMealById}
         />

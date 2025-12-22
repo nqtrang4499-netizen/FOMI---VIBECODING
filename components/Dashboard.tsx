@@ -16,12 +16,13 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, hasLastSuggestions, activeCookingMeal }) => {
   const caloriesConsumed = dailyLog.meals.reduce((acc, m) => acc + m.calories, 0);
-  const progressPercent = Math.min((caloriesConsumed / 2000) * 100, 100);
+  const calorieGoal = profile.calorieGoal || 2000;
+  const progressPercent = Math.min((caloriesConsumed / calorieGoal) * 100, 100);
 
   const getStatus = () => {
-    if (progressPercent < 50) return { label: 'Bụng còn trống', color: 'text-blue-500', bg: 'bg-blue-50', bar: 'bg-blue-400', icon: <Wind size={14} /> };
-    if (progressPercent < 90) return { label: 'Vừa đủ', color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 'bg-emerald-500', icon: <Smile size={14} /> };
-    return { label: 'Đã no nê', color: 'text-emerald-700', bg: 'bg-emerald-100', bar: 'bg-emerald-600', icon: <Activity size={14} /> };
+    if (progressPercent < 40) return { label: 'Bụng còn trống', color: 'text-blue-500', bg: 'bg-blue-50', bar: 'bg-blue-400', icon: <Wind size={14} /> };
+    if (progressPercent < 90) return { label: 'Đã nạp năng lượng', color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 'bg-emerald-500', icon: <Smile size={14} /> };
+    return { label: 'Đã đủ Calo', color: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-500', icon: <Activity size={14} /> };
   };
 
   const status = getStatus();
@@ -42,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
       {/* Active Cooking Meal (Highest Priority) */}
       {activeCookingMeal && (
         <section 
-          onClick={() => onNavigate('shopping')}
+          onClick={() => onNavigate('resume-cooking')}
           className="bg-orange-500 rounded-[40px] p-8 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all"
         >
            <div className="relative z-10 space-y-4">
@@ -149,7 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
             </div>
             <div className="text-right">
                <p className="text-2xl font-bold text-emerald-900">{caloriesConsumed}</p>
-               <p className="text-[10px] font-bold text-gray-300">/ 2000 Kcal</p>
+               <p className="text-[10px] font-bold text-gray-300">/ {calorieGoal} Kcal</p>
             </div>
          </div>
          <div className="w-full h-2 bg-gray-50 rounded-full overflow-hidden">

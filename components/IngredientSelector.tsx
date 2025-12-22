@@ -4,7 +4,8 @@ import { UserProfile, IngredientInput } from '../types';
 import { getDishesFromIngredients, recognizeIngredientsFromPhoto } from '../services/geminiService';
 import { 
   Plus, X, Search, Camera, CheckCircle2, Circle, 
-  ChefHat, Loader2, Sparkles, Drumstick, Leaf, Fish, Egg, Soup, Cherry
+  ChefHat, Loader2, Sparkles, Drumstick, Leaf, Fish, Egg, Soup, Cherry,
+  Flame, Candy, Droplets, Info
 } from 'lucide-react';
 
 interface IngredientSelectorProps {
@@ -22,9 +23,18 @@ const COMMON_TAGS = [
   { name: 'Bún', icon: <Soup size={14} /> },
 ];
 
+const flavorProfiles = [
+  { id: 'spicy', label: 'Cay', icon: <Flame size={14} /> },
+  { id: 'sweet', label: 'Ngọt', icon: <Candy size={14} /> },
+  { id: 'salty', label: 'Mặn', icon: <Droplets size={14} /> },
+  { id: 'sour', label: 'Chua', icon: <Droplets size={14} /> },
+  { id: 'light', label: 'Thanh đạm', icon: <Leaf size={14} /> },
+];
+
 const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResults }) => {
   const [wanted, setWanted] = useState<string[]>([]);
   const [available, setAvailable] = useState<string[]>([]);
+  const [currentFlavors, setCurrentFlavors] = useState<string[]>(profile.flavors || []);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -44,6 +54,14 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
     }
   };
 
+  const toggleFlavor = (id: string) => {
+    if (currentFlavors.includes(id)) {
+      setCurrentFlavors(currentFlavors.filter(f => f !== id));
+    } else {
+      setCurrentFlavors([...currentFlavors, id]);
+    }
+  };
+
   const removeWanted = (name: string) => {
     setWanted(wanted.filter(i => i !== name));
     setAvailable(available.filter(i => i !== name));
@@ -52,12 +70,16 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
   const handleSearch = async () => {
     if (wanted.length === 0) return;
     setLoading(true);
-    // Chuẩn bị dữ liệu: mandatory là những thứ có sẵn
+    
+    // Cập nhật profile tạm thời với khẩu vị đã chọn
+    const tempProfile = { ...profile, flavors: currentFlavors };
+    
     const ingredients: IngredientInput[] = wanted.map(w => ({
       name: w,
       isMandatory: available.includes(w)
     }));
-    const results = await getDishesFromIngredients(profile, ingredients);
+    
+    const results = await getDishesFromIngredients(tempProfile, ingredients);
     onResults(results, ingredients);
     setLoading(false);
   };
@@ -84,7 +106,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
   };
 
   return (
-    <div className="px-6 py-6 space-y-8 animate-in slide-in-from-right duration-500">
+    <div className="px-6 py-6 space-y-8 animate-in slide-in-from-right duration-500 pb-20">
       {isScanning && (
         <div className="fixed inset-0 bg-emerald-900/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center space-y-4">
            <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden">
@@ -97,7 +119,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
 
       <section className="space-y-2">
         <h2 className="text-2xl font-bold text-emerald-900 tracking-tight">Hôm nay ăn gì?</h2>
-        <p className="text-sm text-gray-500 font-medium">Chọn những thứ bạn thèm hoặc đang có sẵn.</p>
+        <p className="text-sm text-gray-500 font-medium">Chọn nguyên liệu và tùy chỉnh khẩu vị cho bữa ăn này.</p>
       </section>
 
       {/* Search Input */}
@@ -139,8 +161,8 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
       {wanted.length > 0 && (
         <section className="space-y-4 animate-in fade-in">
            <div className="flex items-center justify-between px-2">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Danh sách đã chọn</h3>
-              <p className="text-[10px] text-emerald-600 font-bold italic">Tích vào nếu đã có sẵn</p>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Đồ đã chọn</h3>
+              <p className="text-[10px] text-emerald-600 font-bold italic">Tích nếu có sẵn</p>
            </div>
            
            <div className="bg-white rounded-[40px] border border-gray-50 shadow-sm overflow-hidden">
@@ -164,6 +186,32 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
            </div>
         </section>
       )}
+
+      {/* Flavor Refinement */}
+      <section className="space-y-4 bg-emerald-50/50 p-6 rounded-[40px] border border-emerald-100/50">
+        <div className="flex items-center gap-2 px-2">
+          <Sparkles size={18} className="text-emerald-600" />
+          <h3 className="text-sm font-bold text-emerald-900">Khẩu vị hôm nay?</h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {flavorProfiles.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => toggleFlavor(f.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold border transition-all ${
+                currentFlavors.includes(f.id) 
+                ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100' 
+                : 'bg-white border-gray-100 text-gray-400'
+              }`}
+            >
+              {f.icon} {f.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-emerald-600/60 font-medium px-2 italic">
+          * Fomi sẽ ưu tiên các món có vị bạn vừa chọn.
+        </p>
+      </section>
 
       {/* Action Button */}
       <div className="pt-4">

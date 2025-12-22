@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UserProfile, ShoppingItem, Meal } from '../types';
 import { getMarketDetails } from '../services/geminiService';
-import { CheckCircle2, Circle, ShoppingCart, MapPin, Package, Zap, Trash2, Loader2, Navigation, Clock, CreditCard, ChevronDown, ChevronUp, ChefHat } from 'lucide-react';
+import { CheckCircle2, Circle, ShoppingCart, MapPin, Package, Zap, Trash2, Loader2, Navigation, Clock, CreditCard, ChevronDown, ChevronUp, ChefHat, Play } from 'lucide-react';
 
 interface ShoppingListProps {
   profile: UserProfile;
@@ -50,7 +50,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart, act
   const isAllBought = cart.every(item => item.isBought);
 
   return (
-    <div className="px-6 py-6 space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-32">
+    <div className="px-6 py-6 space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-44">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-black text-emerald-900 tracking-tight">
@@ -104,13 +104,13 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart, act
 
       {/* Start Cooking Floating Button */}
       {activeMeal && (
-        <div className="fixed bottom-6 left-6 right-6 z-50">
+        <div className="fixed bottom-6 left-6 right-6 z-50 space-y-3">
           <button 
             onClick={onStartCooking}
-            className={`w-full py-5 rounded-[32px] font-black text-sm uppercase flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95 ${isAllBought ? 'bg-emerald-600 text-white animate-pulse' : 'bg-gray-100 text-gray-400'}`}
+            className={`w-full py-5 rounded-[32px] font-black text-sm uppercase flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95 ${isAllBought ? 'bg-emerald-600 text-white animate-pulse' : 'bg-emerald-900 text-emerald-400'}`}
           >
             <ChefHat size={24} />
-            {isAllBought ? 'Bắt đầu chế biến ngay' : 'Mua đủ đồ để nấu ăn'}
+            {isAllBought ? 'Bắt đầu chế biến ngay' : 'Tôi đã có đủ đồ, vào bếp thôi'}
           </button>
         </div>
       )}

@@ -1,15 +1,18 @@
 
 import React from 'react';
-import { DailyLog, Meal } from '../types';
-import { Trash2, Utensils, Store, Flame, Clock, Zap } from 'lucide-react';
+import { DailyLog, Meal, UserProfile } from '../types';
+// Fix: Added AlertCircle to imports
+import { Trash2, Utensils, Store, Flame, Clock, Zap, AlertCircle } from 'lucide-react';
 
 interface DailyLogViewProps {
   dailyLog: DailyLog;
   onRemoveMeal: (mealId: string) => void;
+  profile?: UserProfile;
 }
 
-const DailyLogView: React.FC<DailyLogViewProps> = ({ dailyLog, onRemoveMeal }) => {
+const DailyLogView: React.FC<DailyLogViewProps> = ({ dailyLog, onRemoveMeal, profile }) => {
   const totalCalories = dailyLog.meals.reduce((acc, m) => acc + m.calories, 0);
+  const calorieGoal = profile?.calorieGoal || 2000;
 
   return (
     <div className="px-6 py-6 space-y-8 animate-in slide-in-from-bottom-4 duration-500">
@@ -79,14 +82,20 @@ const DailyLogView: React.FC<DailyLogViewProps> = ({ dailyLog, onRemoveMeal }) =
          <h4 className="font-bold flex items-center gap-2">Tóm tắt dinh dưỡng</h4>
          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-               <p className="text-[10px] uppercase font-bold opacity-50">Calo mục tiêu</p>
-               <p className="text-xl font-bold">2,000</p>
+               <p className="text-[10px] uppercase font-bold opacity-50">Mục tiêu Calo</p>
+               <p className="text-xl font-bold">{calorieGoal.toLocaleString()}</p>
             </div>
             <div className="space-y-1">
                <p className="text-[10px] uppercase font-bold opacity-50">Còn lại</p>
-               <p className="text-xl font-bold">{Math.max(2000 - totalCalories, 0)}</p>
+               <p className="text-xl font-bold">{Math.max(calorieGoal - totalCalories, 0).toLocaleString()}</p>
             </div>
          </div>
+         {totalCalories > calorieGoal && (
+            <div className="bg-orange-500/20 p-3 rounded-2xl flex items-center gap-2 border border-orange-500/30 animate-pulse">
+               <AlertCircle size={16} className="text-orange-400" />
+               <p className="text-[10px] font-bold">Bạn đã nạp quá mục tiêu hôm nay!</p>
+            </div>
+         )}
       </div>
     </div>
   );

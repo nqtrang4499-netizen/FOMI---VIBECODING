@@ -12,6 +12,13 @@ export interface UserProfile {
   preferences: string[];
   flavors: string[];
   goal: 'Giảm cân' | 'Giữ dáng' | 'Tăng cơ';
+  // Dữ liệu cơ thể
+  weight?: number;
+  height?: number;
+  age?: number;
+  gender?: 'Nam' | 'Nữ';
+  activityLevel?: 'Ít vận động' | 'Vận động nhẹ' | 'Vận động vừa' | 'Vận động mạnh';
+  calorieGoal?: number;
 }
 
 export interface IngredientInput {
