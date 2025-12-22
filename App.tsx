@@ -50,8 +50,19 @@ const App: React.FC = () => {
     setUserProfile(null);
   };
 
-  const addMeal = (meal: Meal) => {
-    const newMeals = [...dailyLog.meals, meal];
+  const addMeal = (meal: any) => {
+    const newMeal: Meal = {
+      id: meal.id,
+      name: meal.name,
+      type: meal.type,
+      isEatOut: meal.isEatOut,
+      calories: meal.calories,
+      description: meal.description,
+      hackTip: meal.hackTip,
+      ingredientsMissing: meal.ingredientsMissing?.map((i: any) => i.name)
+    };
+
+    const newMeals = [...dailyLog.meals, newMeal];
     const totalCals = newMeals.reduce((acc, m) => acc + m.calories, 0);
     
     let status: 'Under' | 'Balanced' | 'Over' = 'Balanced';
@@ -60,15 +71,15 @@ const App: React.FC = () => {
 
     setDailyLog({ ...dailyLog, meals: newMeals, compensationStatus: status });
 
-    // Tự động thêm nguyên liệu thiếu vào giỏ hàng
+    // Tự động thêm nguyên liệu thiếu vào giỏ hàng với giá từ AI
     if (meal.ingredientsMissing && meal.ingredientsMissing.length > 0) {
-      const newItems: ShoppingItem[] = meal.ingredientsMissing.map(name => ({
+      const newItems: ShoppingItem[] = meal.ingredientsMissing.map((i: any) => ({
         id: Math.random().toString(36).substr(2, 9),
-        name,
+        name: i.name,
         category: 'Thực phẩm',
         amount: '1 phần',
-        isProtein: false,
-        price: 25000, // Giá giả định
+        isProtein: i.name.toLowerCase().includes('thịt') || i.name.toLowerCase().includes('cá') || i.name.toLowerCase().includes('trứng'),
+        price: i.estimatedPrice || 20000,
         fromMeal: meal.name,
         isBought: false
       }));
