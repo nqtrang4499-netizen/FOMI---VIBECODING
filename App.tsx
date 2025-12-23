@@ -132,7 +132,6 @@ const App: React.FC = () => {
     if (shouldGoShopping && meal.ingredientsMissing?.length > 0) {
       setCurrentView('shopping');
     } else {
-      // Nếu không đi chợ hoặc không thiếu đồ, chuyển sang nấu
       setCurrentView('cooking-progress');
     }
   };
@@ -141,7 +140,6 @@ const App: React.FC = () => {
     if (dailyLog.meals.some(m => m.name.toLowerCase() === meal.name.toLowerCase())) return;
     const newMeals = [...dailyLog.meals, meal];
     updateLog(newMeals);
-    // Chuyển sang màn hình chúc mừng trước khi về Home
     setCurrentView('enjoy-meal');
   };
 
@@ -172,7 +170,6 @@ const App: React.FC = () => {
 
   const handleBack = () => {
     if (currentView === 'cooking-progress') {
-       // Nếu đang nấu mà quay lại, hỏi xem muốn đi chợ hay về Home
        if (shoppingCart.length > 0) setCurrentView('shopping');
        else setCurrentView('home');
     }
@@ -184,7 +181,6 @@ const App: React.FC = () => {
 
   const handleResumeCooking = () => {
     if (!activeCookingMeal) return;
-    // Ưu tiên đi chợ nếu còn đồ chưa mua, nhưng vẫn cho phép nhảy thẳng vào nấu
     if (shoppingCart.some(i => !i.isBought)) {
       setCurrentView('shopping');
     } else {
@@ -201,74 +197,76 @@ const App: React.FC = () => {
       showBack={currentView !== 'home' && currentView !== 'enjoy-meal'} 
       onBack={handleBack}
     >
-      {currentView === 'home' && (
-        <Dashboard 
-          profile={userProfile} 
-          dailyLog={dailyLog} 
-          onNavigate={(view) => {
-            if (view === 'resume-cooking') handleResumeCooking();
-            else setCurrentView(view as ViewState);
-          }}
-          hasLastSuggestions={aiSuggestions.length > 0}
-          activeCookingMeal={activeCookingMeal}
-        />
-      )}
-      {currentView === 'select-ingredients' && (
-        <IngredientSelector 
-          profile={userProfile}
-          onResults={(results, usedIngs) => {
-            setAiSuggestions(results);
-            setLastUsedIngredients(usedIngs);
-            setCurrentView('meal-suggestions');
-          }}
-        />
-      )}
-      {currentView === 'meal-suggestions' && (
-        <MealSuggestionsView 
-          suggestions={aiSuggestions}
-          dailyLog={dailyLog}
-          activeCookingMeal={activeCookingMeal}
-          onAddMeal={startPreparingMeal}
-          onRemoveMeal={cancelMealSelection}
-          onRegenerate={() => setCurrentView('select-ingredients')}
-        />
-      )}
-      {currentView === 'shopping' && (
-        <ShoppingList 
-          profile={userProfile} 
-          cart={shoppingCart} 
-          setCart={setShoppingCart}
-          activeMeal={activeCookingMeal}
-          onStartCooking={() => setCurrentView('cooking-progress')}
-        />
-      )}
-      {currentView === 'cooking-progress' && activeCookingMeal && (
-        <CookingProgressView 
-          meal={activeCookingMeal} 
-          onComplete={() => finalizeMealRecord(activeCookingMeal)}
-          onCancel={() => {
-            setActiveCookingMeal(null);
-            setCurrentView('home');
-          }}
-        />
-      )}
-      {currentView === 'enjoy-meal' && activeCookingMeal && (
-        <EnjoyMealView 
-          meal={activeCookingMeal} 
-          onFinish={() => {
-            setActiveCookingMeal(null);
-            setShoppingCart([]);
-            setCurrentView('home');
-          }} 
-        />
-      )}
-      {currentView === 'history' && (
-        <DailyLogView 
-          profile={userProfile}
-          dailyLog={dailyLog} 
-          onRemoveMeal={removeMealById}
-        />
-      )}
+      <div key={currentView} className="view-transition-enter h-full">
+        {currentView === 'home' && (
+          <Dashboard 
+            profile={userProfile} 
+            dailyLog={dailyLog} 
+            onNavigate={(view) => {
+              if (view === 'resume-cooking') handleResumeCooking();
+              else setCurrentView(view as ViewState);
+            }}
+            hasLastSuggestions={aiSuggestions.length > 0}
+            activeCookingMeal={activeCookingMeal}
+          />
+        )}
+        {currentView === 'select-ingredients' && (
+          <IngredientSelector 
+            profile={userProfile}
+            onResults={(results, usedIngs) => {
+              setAiSuggestions(results);
+              setLastUsedIngredients(usedIngs);
+              setCurrentView('meal-suggestions');
+            }}
+          />
+        )}
+        {currentView === 'meal-suggestions' && (
+          <MealSuggestionsView 
+            suggestions={aiSuggestions}
+            dailyLog={dailyLog}
+            activeCookingMeal={activeCookingMeal}
+            onAddMeal={startPreparingMeal}
+            onRemoveMeal={cancelMealSelection}
+            onRegenerate={() => setCurrentView('select-ingredients')}
+          />
+        )}
+        {currentView === 'shopping' && (
+          <ShoppingList 
+            profile={userProfile} 
+            cart={shoppingCart} 
+            setCart={setShoppingCart}
+            activeMeal={activeCookingMeal}
+            onStartCooking={() => setCurrentView('cooking-progress')}
+          />
+        )}
+        {currentView === 'cooking-progress' && activeCookingMeal && (
+          <CookingProgressView 
+            meal={activeCookingMeal} 
+            onComplete={() => finalizeMealRecord(activeCookingMeal)}
+            onCancel={() => {
+              setActiveCookingMeal(null);
+              setCurrentView('home');
+            }}
+          />
+        )}
+        {currentView === 'enjoy-meal' && activeCookingMeal && (
+          <EnjoyMealView 
+            meal={activeCookingMeal} 
+            onFinish={() => {
+              setActiveCookingMeal(null);
+              setShoppingCart([]);
+              setCurrentView('home');
+            }} 
+          />
+        )}
+        {currentView === 'history' && (
+          <DailyLogView 
+            profile={userProfile}
+            dailyLog={dailyLog} 
+            onRemoveMeal={removeMealById}
+          />
+        )}
+      </div>
     </Layout>
   );
 };

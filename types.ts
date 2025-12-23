@@ -29,7 +29,7 @@ export interface IngredientInput {
 export interface Meal {
   id: string;
   name: string;
-  type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+  type: 'Bữa sáng' | 'Bữa trưa' | 'Bữa tối' | 'Ăn nhẹ';
   isEatOut: boolean;
   calories: number;
   description: string;
@@ -44,7 +44,7 @@ export interface Meal {
 export interface DailyLog {
   date: string;
   meals: Meal[];
-  compensationStatus: 'Under' | 'Balanced' | 'Over';
+  compensationStatus: 'Thiếu' | 'Cân bằng' | 'Vượt';
 }
 
 export interface ShoppingItem {

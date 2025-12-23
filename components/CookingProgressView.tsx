@@ -37,14 +37,13 @@ const CookingProgressView: React.FC<CookingProgressViewProps> = ({ meal, onCompl
           <p className="text-sm font-bold text-emerald-600">{meal.name}</p>
         </div>
         <button 
-          onClick={() => { if(confirm('Bạn muốn dừng nấu ăn?')) onCancel(); }}
+          onClick={() => { if(confirm('Bạn có muốn dừng nấu bữa này không?')) onCancel(); }}
           className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
         >
           <X size={20} />
         </button>
       </div>
 
-      {/* Progress Bar */}
       <div className="space-y-3">
          <div className="flex justify-between items-end">
             <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Tiến độ nấu</span>
@@ -58,7 +57,6 @@ const CookingProgressView: React.FC<CookingProgressViewProps> = ({ meal, onCompl
          </div>
       </div>
 
-      {/* Current Step Card */}
       <div className="bg-white rounded-[40px] p-8 border border-emerald-50 shadow-xl shadow-emerald-900/5 min-h-[300px] flex flex-col justify-center relative overflow-hidden group">
          <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform" />
          
@@ -74,25 +72,23 @@ const CookingProgressView: React.FC<CookingProgressViewProps> = ({ meal, onCompl
             {currentStep === 0 && (
                <div className="bg-orange-50 p-4 rounded-2xl flex items-center gap-3">
                   <Clock size={18} className="text-orange-500" />
-                  <span className="text-xs font-bold text-orange-900">Thời gian dự kiến: {meal.estimatedTime || '20 phút'}</span>
+                  <span className="text-xs font-bold text-orange-900">Thời gian ước tính: {meal.estimatedTime || '20 phút'}</span>
                </div>
             )}
          </div>
       </div>
 
-      {/* Hack Tip for this step (Contextual) */}
       <div className="bg-emerald-900 text-white p-7 rounded-[40px] space-y-2">
          <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
-            <Sparkles size={14} /> Mẹo từ Fomi
+            <Sparkles size={14} /> Bí kíp từ Fomi
          </div>
          <p className="text-sm leading-relaxed italic opacity-90">
             {currentStep === steps.length - 1 
-              ? "Trình bày đẹp mắt sẽ giúp bạn cảm thấy ngon miệng hơn và thỏa mãn thị giác."
-              : meal.hackTip || "Giữ bếp sạch sẽ giúp bạn nấu ăn thoải mái và tiết kiệm thời gian dọn dẹp."}
+              ? "Sắp xếp món ăn đẹp mắt sẽ kích thích vị giác và khiến bạn cảm thấy hài lòng hơn với thành quả của mình."
+              : meal.hackTip || "Hãy luôn giữ bếp gọn gàng để quá trình nấu nướng trở nên thư thái và nhanh chóng hơn."}
          </p>
       </div>
 
-      {/* Navigation Controls */}
       <div className="fixed bottom-6 left-6 right-6 flex gap-4 bg-white/80 backdrop-blur-md p-2 rounded-[40px] border border-gray-100 shadow-2xl">
          <button 
            onClick={prevStep}
@@ -107,9 +103,9 @@ const CookingProgressView: React.FC<CookingProgressViewProps> = ({ meal, onCompl
            className="flex-1 bg-emerald-600 text-white font-black rounded-full flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-sm uppercase"
          >
             {currentStep === steps.length - 1 ? (
-              <>Hoàn thành món ăn <PartyPopper size={20} /></>
+              <>Hoàn tất bữa ăn <PartyPopper size={20} /></>
             ) : (
-              <>Bước tiếp theo <ChevronRight size={20} /></>
+              <>Tiếp theo <ChevronRight size={20} /></>
             )}
          </button>
       </div>

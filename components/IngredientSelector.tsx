@@ -5,7 +5,7 @@ import { getDishesFromIngredients, recognizeIngredientsFromPhoto } from '../serv
 import { 
   Plus, X, Search, Camera, CheckCircle2, Circle, 
   ChefHat, Loader2, Sparkles, Drumstick, Leaf, Fish, Egg, Soup, Cherry,
-  Flame, Candy, Droplets, Info
+  Flame, Candy, Droplets, ArrowRight
 } from 'lucide-react';
 
 interface IngredientSelectorProps {
@@ -15,20 +15,16 @@ interface IngredientSelectorProps {
 
 const COMMON_TAGS = [
   { name: 'Thịt heo', icon: <Drumstick size={14} /> },
-  { name: 'Thịt bò', icon: <Drumstick size={14} /> },
   { name: 'Cá', icon: <Fish size={14} /> },
   { name: 'Trứng', icon: <Egg size={14} /> },
-  { name: 'Rau muống', icon: <Leaf size={14} /> },
+  { name: 'Rau', icon: <Leaf size={14} /> },
   { name: 'Cà chua', icon: <Cherry size={14} /> },
-  { name: 'Bún', icon: <Soup size={14} /> },
 ];
 
 const flavorProfiles = [
-  { id: 'spicy', label: 'Cay', icon: <Flame size={14} /> },
-  { id: 'sweet', label: 'Ngọt', icon: <Candy size={14} /> },
-  { id: 'salty', label: 'Mặn', icon: <Droplets size={14} /> },
-  { id: 'sour', label: 'Chua', icon: <Droplets size={14} /> },
-  { id: 'light', label: 'Thanh đạm', icon: <Leaf size={14} /> },
+  { id: 'spicy', label: 'Cay', icon: <Flame size={12} /> },
+  { id: 'sweet', label: 'Ngọt', icon: <Candy size={12} /> },
+  { id: 'light', label: 'Thanh', icon: <Leaf size={12} /> },
 ];
 
 const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResults }) => {
@@ -70,158 +66,116 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
   const handleSearch = async () => {
     if (wanted.length === 0) return;
     setLoading(true);
-    
-    // Cập nhật profile tạm thời với khẩu vị đã chọn
     const tempProfile = { ...profile, flavors: currentFlavors };
-    
     const ingredients: IngredientInput[] = wanted.map(w => ({
       name: w,
       isMandatory: available.includes(w)
     }));
-    
     const results = await getDishesFromIngredients(tempProfile, ingredients);
     onResults(results, ingredients);
     setLoading(false);
   };
 
-  const handlePhotoScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsScanning(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = (reader.result as string).split(',')[1];
-      const detected = await recognizeIngredientsFromPhoto(base64);
-      const newWanted = [...wanted];
-      const newAvailable = [...available];
-      detected.forEach((d: any) => {
-        if (!newWanted.includes(d.name)) newWanted.push(d.name);
-        if (!newAvailable.includes(d.name)) newAvailable.push(d.name);
-      });
-      setWanted(newWanted);
-      setAvailable(newAvailable);
-      setIsScanning(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
   return (
-    <div className="px-6 py-6 space-y-8 animate-in slide-in-from-right duration-500 pb-20">
+    <div className="px-6 py-4 space-y-8 animate-in slide-in-from-right duration-500 pb-24">
       {isScanning && (
-        <div className="fixed inset-0 bg-emerald-900/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center space-y-4">
-           <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden">
-              <div className="absolute inset-x-0 h-1 bg-emerald-500 animate-scan"></div>
-              <Camera size={32} className="text-emerald-600" />
+        <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md z-50 flex items-center justify-center">
+           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center relative overflow-hidden shadow-2xl">
+              <div className="animate-scan" />
+              <Camera size={24} className="text-emerald-600" />
            </div>
-           <p className="text-white font-bold">Đang quét tủ lạnh...</p>
         </div>
       )}
 
-      <section className="space-y-2">
-        <h2 className="text-2xl font-bold text-emerald-900 tracking-tight">Hôm nay ăn gì?</h2>
-        <p className="text-sm text-gray-500 font-medium">Chọn nguyên liệu và tùy chỉnh khẩu vị cho bữa ăn này.</p>
+      <section>
+        <h2 className="text-2xl font-extrabold text-emerald-950">Hôm nay ăn gì?</h2>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Chọn nguyên liệu bạn đang có</p>
       </section>
 
-      {/* Search Input */}
-      <section className="relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500">
-           <Search size={20} />
-        </div>
+      {/* Simplified Search */}
+      <div className="relative">
         <input 
           type="text" 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addWanted(input)}
-          placeholder="Nhập nguyên liệu: gà, bò, nấm..." 
-          className="w-full bg-white border border-gray-100 rounded-3xl pl-12 pr-12 py-5 text-sm font-semibold shadow-sm outline-none focus:border-emerald-500 transition-all"
+          placeholder="Thịt bò, nấm, đậu hũ..." 
+          className="w-full bg-white border border-emerald-50 rounded-2xl pl-5 pr-14 py-4 text-sm font-semibold shadow-sm focus:border-emerald-500 outline-none transition-all"
         />
         <button 
-          onClick={() => { fileInputRef.current?.click(); }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center"
+          onClick={() => fileInputRef.current?.click()}
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"
         >
-          <Camera size={20} />
+          <Camera size={18} />
         </button>
-        <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRef} onChange={handlePhotoScan} />
-      </section>
+        <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRef} onChange={() => setIsScanning(true)} />
+      </div>
 
-      {/* Common Tags */}
-      <section className="flex flex-wrap gap-2">
-        {COMMON_TAGS.map(tag => (
-          <button
-            key={tag.name}
-            onClick={() => addWanted(tag.name)}
-            className="px-4 py-2 bg-white border border-gray-50 rounded-full text-xs font-bold text-gray-500 flex items-center gap-2 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-          >
-            {tag.icon} {tag.name}
-          </button>
-        ))}
-      </section>
-
-      {/* List Manager */}
-      {wanted.length > 0 && (
-        <section className="space-y-4 animate-in fade-in">
-           <div className="flex items-center justify-between px-2">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Đồ đã chọn</h3>
-              <p className="text-[10px] text-emerald-600 font-bold italic">Tích nếu có sẵn</p>
-           </div>
-           
-           <div className="bg-white rounded-[40px] border border-gray-50 shadow-sm overflow-hidden">
-              {wanted.map((item) => (
-                <div key={item} className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0">
-                   <div className="flex items-center gap-4 flex-1" onClick={() => toggleAvailable(item)}>
-                      {available.includes(item) ? (
-                        <CheckCircle2 size={24} className="text-emerald-500" />
-                      ) : (
-                        <Circle size={24} className="text-gray-100" />
-                      )}
-                      <span className={`font-bold text-sm ${available.includes(item) ? 'text-emerald-900' : 'text-gray-400'}`}>
-                        {item}
-                      </span>
-                   </div>
-                   <button onClick={() => removeWanted(item)} className="p-2 text-gray-200 hover:text-red-400">
-                      <X size={18} />
-                   </button>
-                </div>
-              ))}
-           </div>
-        </section>
-      )}
-
-      {/* Flavor Refinement */}
-      <section className="space-y-4 bg-emerald-50/50 p-6 rounded-[40px] border border-emerald-100/50">
-        <div className="flex items-center gap-2 px-2">
-          <Sparkles size={18} className="text-emerald-600" />
-          <h3 className="text-sm font-bold text-emerald-900">Khẩu vị hôm nay?</h3>
-        </div>
+      {/* Ingredient Tags Area */}
+      <section className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {flavorProfiles.map((f) => (
+          {COMMON_TAGS.map(tag => (
+            <button
+              key={tag.name}
+              onClick={() => addWanted(tag.name)}
+              className="px-4 py-2 bg-white border border-emerald-50 rounded-full text-[11px] font-extrabold text-emerald-900 flex items-center gap-2 hover:bg-emerald-50 transition-all shadow-sm"
+            >
+              {tag.icon} {tag.name}
+            </button>
+          ))}
+        </div>
+
+        {wanted.length > 0 && (
+          <div className="bg-emerald-50/30 rounded-[28px] p-6 space-y-4 border border-emerald-50">
+             <div className="flex justify-between items-center px-1">
+                <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-widest">Danh sách đã chọn</span>
+                <span className="text-[9px] text-emerald-600 font-bold italic">Tích nếu có sẵn</span>
+             </div>
+             <div className="flex flex-wrap gap-3">
+                {wanted.map(item => (
+                  <div key={item} className="flex items-center gap-2 bg-white p-1 pr-3 rounded-full border border-emerald-50 shadow-sm transition-all group">
+                     <button 
+                       onClick={() => toggleAvailable(item)}
+                       className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${available.includes(item) ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-300'}`}
+                     >
+                       <CheckCircle2 size={16} />
+                     </button>
+                     <span className={`text-xs font-bold ${available.includes(item) ? 'text-emerald-950' : 'text-gray-400'}`}>{item}</span>
+                     <button onClick={() => removeWanted(item)} className="ml-1 text-gray-300 hover:text-red-500"><X size={14} /></button>
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+      </section>
+
+      {/* Flavor Refinement Chips */}
+      <section className="space-y-3">
+        <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest px-1">Gu vị hôm nay</p>
+        <div className="flex gap-2">
+          {flavorProfiles.map(f => (
             <button
               key={f.id}
               onClick={() => toggleFlavor(f.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold border transition-all ${
-                currentFlavors.includes(f.id) 
-                ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100' 
-                : 'bg-white border-gray-100 text-gray-400'
+              className={`flex-1 py-3 rounded-xl text-[11px] font-extrabold border transition-all flex items-center justify-center gap-2 ${
+                currentFlavors.includes(f.id) ? 'bg-emerald-950 border-emerald-950 text-white shadow-lg' : 'bg-white border-emerald-50 text-gray-400'
               }`}
             >
               {f.icon} {f.label}
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-emerald-600/60 font-medium px-2 italic">
-          * Fomi sẽ ưu tiên các món có vị bạn vừa chọn.
-        </p>
       </section>
 
-      {/* Action Button */}
-      <div className="pt-4">
+      {/* CTA Button */}
+      <div className="pt-2">
         <button 
           onClick={handleSearch}
           disabled={loading || wanted.length === 0}
-          className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold rounded-[32px] flex items-center justify-center gap-3 shadow-xl shadow-emerald-100 transition-all active:scale-95 text-sm uppercase"
+          className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 transition-all active:scale-95 text-sm uppercase tracking-wider"
         >
-          {loading ? <Loader2 size={24} className="animate-spin" /> : <ChefHat size={24} />}
-          {loading ? 'Đang sáng tạo thực đơn...' : 'Tìm món ngon phù hợp'}
+          {loading ? <Loader2 size={20} className="animate-spin" /> : <ArrowRight size={20} />}
+          {loading ? 'Đang sáng tạo...' : 'Xây dựng thực đơn'}
         </button>
       </div>
     </div>
