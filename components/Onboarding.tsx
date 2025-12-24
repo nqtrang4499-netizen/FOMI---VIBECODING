@@ -3,14 +3,13 @@ import React, { useState, useMemo } from 'react';
 import { UserProfile, Region } from '../types';
 import { 
   ChevronRight, ChevronLeft, Sparkles, Fish, Drumstick, Leaf, Candy, Scale, Activity, 
-  CheckCircle2, Zap, MapPin
+  CheckCircle2, MapPin, AlertOctagon, Plus, X, Dna, Fingerprint, ScanLine
 } from 'lucide-react';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
 }
 
-// Fomi Panda - Gấu trắng tai đen
 const MASCOT_URL = "https://api.dicebear.com/7.x/big-ears/svg?seed=Fomi&backgroundColor=b6e3f4&skinColor=ffffff&hairColor=000000";
 
 const tasteGroups = [
@@ -18,7 +17,7 @@ const tasteGroups = [
     title: "Món chính ưu tiên",
     key: "protein",
     items: [
-      { id: 'beef', label: 'Thịt bò', icon: <img src="https://cdn-icons-png.flaticon.com/512/1134/1134447.png" className="w-3 h-3 grayscale" /> },
+      { id: 'beef', label: 'Thịt bò', icon: <img src="https://cdn-icons-png.flaticon.com/512/1134/1134447.png" className="w-4 h-4 grayscale" /> },
       { id: 'pork', label: 'Thịt heo', icon: <Drumstick size={14} /> },
       { id: 'seafood', label: 'Hải sản', icon: <Fish size={14} /> },
       { id: 'poultry', label: 'Gà/Vịt', icon: <Drumstick size={14} /> },
@@ -27,10 +26,18 @@ const tasteGroups = [
   }
 ];
 
+const allergyOptions = [
+    { id: 'seafood', label: 'Hải sản' },
+    { id: 'peanut', label: 'Đậu/Hạt' },
+    { id: 'dairy', label: 'Sữa' },
+    { id: 'gluten', label: 'Gluten' },
+    { id: 'garlic', label: 'Hành tỏi' }
+];
+
 const flavorProfiles = [
-  { id: 'spicy', label: 'Ăn cay', icon: '🌶️' },
-  { id: 'sweet', label: 'Hơi ngọt', icon: <Candy size={14} className="text-pink-400" /> },
-  { id: 'light', label: 'Thanh đạm', icon: <Leaf size={14} className="text-green-400" /> },
+  { id: 'spicy', label: 'Cay', icon: '🌶️' },
+  { id: 'sweet', label: 'Ngọt', icon: <Candy size={12} className="text-pink-400" /> },
+  { id: 'light', label: 'Thanh', icon: <Leaf size={12} className="text-green-400" /> },
 ];
 
 const activityLevels = [
@@ -40,15 +47,47 @@ const activityLevels = [
   { id: 'Vận động mạnh', label: 'Vận động mạnh', multiplier: 1.725 },
 ];
 
+// Database siêu thực phẩm (Giữ nguyên logic cũ)
+const SUPERFOOD_DATABASE = [
+    { name: 'Ức gà', group: 'protein', tags: ['poultry'], allergens: [] },
+    { name: 'Thịt bò nạc', group: 'protein', tags: ['beef'], allergens: [] },
+    { name: 'Cá hồi', group: 'protein', tags: ['seafood'], allergens: ['seafood'] },
+    { name: 'Tôm', group: 'protein', tags: ['seafood'], allergens: ['seafood'] },
+    { name: 'Đậu hũ', group: 'protein', tags: ['tofu'], allergens: [] },
+    { name: 'Trứng gà', group: 'protein', tags: [], allergens: [] },
+    { name: 'Yến mạch', group: 'carb', tags: [], allergens: ['gluten'] },
+    { name: 'Khoai lang', group: 'carb', tags: [], allergens: [] },
+    { name: 'Gạo lứt', group: 'carb', tags: [], allergens: [] },
+    { name: 'Bánh mì đen', group: 'carb', tags: [], allergens: ['gluten'] },
+    { name: 'Bơ sáp', group: 'fat', tags: [], allergens: [] },
+    { name: 'Hạt điều', group: 'fat', tags: [], allergens: ['peanut'] },
+    { name: 'Sữa chua Hy Lạp', group: 'other', tags: [], allergens: ['dairy'] },
+    { name: 'Phô mai', group: 'fat', tags: [], allergens: ['dairy'] },
+    { name: 'Rau chân vịt', group: 'vege', tags: [], allergens: [] },
+    { name: 'Bông cải xanh', group: 'vege', tags: [], allergens: [] },
+    { name: 'Táo', group: 'fruit', tags: [], allergens: [] },
+    { name: 'Chuối', group: 'fruit', tags: [], allergens: [] },
+    { name: 'Hạnh nhân', group: 'fat', tags: [], allergens: ['peanut'] }
+];
+
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
   const [useBodyData, setUseBodyData] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  
+  // Custom inputs state
+  const [customInputs, setCustomInputs] = useState({
+      preferences: '',
+      flavors: '',
+      allergies: ''
+  });
+
   const [data, setData] = useState<Partial<UserProfile>>({
     region: Region.SOUTH,
     isLactoseIntolerant: false,
     preferences: [],
     flavors: [],
+    allergies: [],
     goal: 'Giữ dáng',
     gender: 'Nam',
     activityLevel: 'Ít vận động'
@@ -66,6 +105,21 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     }
   };
 
+  const addCustomItem = (key: 'preferences' | 'flavors' | 'allergies') => {
+      const val = customInputs[key].trim();
+      if (!val) return;
+      const current = (data[key] as string[]) || [];
+      if (!current.includes(val)) {
+          setData({ ...data, [key]: [...current, val] });
+          setCustomInputs({ ...customInputs, [key]: '' });
+      }
+  };
+
+  const removeCustomItem = (key: 'preferences' | 'flavors' | 'allergies', val: string) => {
+      const current = (data[key] as string[]) || [];
+      setData({ ...data, [key]: current.filter(item => item !== val) });
+  };
+
   const bodyAnalysis = useMemo(() => {
     if (!data.weight || !data.height) return null;
     const heightInMeters = data.height / 100;
@@ -78,19 +132,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     if (bmiValue < 18.5) {
       status = 'Cân nặng thấp (Gầy)';
       color = 'text-blue-500';
-      advice = 'Fomi sẽ ưu tiên các món giàu đạm và dinh dưỡng để bạn đạt cân nặng lý tưởng.';
+      advice = 'Ưu tiên đạm & dinh dưỡng.';
     } else if (bmiValue < 23.0) {
-      status = 'Thể trạng bình thường';
+      status = 'Bình thường';
       color = 'text-emerald-500';
-      advice = 'Chỉ số cơ thể tuyệt vời! Hãy duy trì lối sống lành mạnh này cùng Fomi.';
+      advice = 'Duy trì lối sống này nhé!';
     } else if (bmiValue < 25.0) {
-      status = 'Tiền béo phì (Thừa cân)';
+      status = 'Thừa cân';
       color = 'text-orange-500';
-      advice = 'Bạn đang hơi thừa cân một chút. Fomi sẽ giúp bạn cân bằng lại thực đơn mỗi ngày.';
+      advice = 'Cân bằng lại thực đơn chút.';
     } else {
       status = 'Béo phì';
       color = 'text-red-500';
-      advice = 'Đừng quá lo lắng, Fomi sẽ thiết kế thực đơn giảm calo nhưng vẫn đảm bảo ngon miệng.';
+      advice = 'Giảm calo nhưng vẫn ngon miệng.';
     }
 
     return { bmi: bmiValue, status, color, advice };
@@ -107,317 +161,477 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     return Math.round(tdee);
   }, [data]);
 
+  // Logic Recommendation
+  const getRecommendations = () => {
+    const userAllergies = data.allergies || [];
+    const userPreferences = data.preferences || [];
+    const goal = data.goal;
+
+    // 1. Lọc bỏ món dị ứng
+    let safeFoods = SUPERFOOD_DATABASE.filter(food => {
+        const hasAllergen = food.allergens.some(a => userAllergies.includes(a));
+        return !hasAllergen;
+    });
+
+    // 2. Chấm điểm
+    const scoredFoods = safeFoods.map(food => {
+        let score = 0;
+        if (food.tags.some(t => userPreferences.includes(t))) score += 5;
+        if (goal === 'Tăng cơ' && food.group === 'protein') score += 2;
+        if (goal === 'Giảm cân' && (food.group === 'vege' || food.group === 'protein')) score += 2;
+        if (goal === 'Giữ dáng' && (food.group === 'fruit' || food.group === 'fat')) score += 1;
+        return { ...food, score };
+    });
+
+    const topFoods = scoredFoods.sort((a, b) => b.score - a.score).slice(0, 6).map(f => f.name);
+
+    let macro = { p: 30, c: 40, f: 30 };
+    if (goal === 'Tăng cơ') macro = { p: 40, c: 40, f: 20 };
+    else if (goal === 'Giảm cân') macro = { p: 40, c: 30, f: 30 };
+
+    return { foods: topFoods, macro };
+  };
+
+  const recs = getRecommendations();
+  const calS = Math.round(calorieGoal * 0.25);
+  const calT = Math.round(calorieGoal * 0.40);
+  const calC = Math.round(calorieGoal * 0.35);
+
   const handleFinish = () => {
     onComplete({ ...data, calorieGoal: useBodyData ? calorieGoal : 2000 } as UserProfile);
   };
 
-  return (
-    <div className="max-w-md mx-auto h-[100dvh] bg-[#FAFBFA] flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute -top-24 -left-24 w-64 h-64 bg-emerald-100/40 rounded-full blur-3xl" />
-      <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-orange-100/40 rounded-full blur-3xl" />
-
-      {showAnalysis && bodyAnalysis && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-emerald-950/80 backdrop-blur-md" />
-          <div className="bg-white w-full rounded-[40px] p-6 space-y-6 relative z-10 shadow-2xl border border-emerald-50/50 animate-in zoom-in slide-in-from-bottom-12 duration-500">
-             <div className="text-center space-y-3">
-                <div className="w-16 h-16 bg-white rounded-[24px] mx-auto flex items-center justify-center shadow-inner relative overflow-hidden border border-emerald-100">
-                   <Activity size={32} className="relative z-10 animate-pulse text-emerald-600" />
+  // ... (Analysis Modal Code kept same)
+  if (showAnalysis && bodyAnalysis) {
+      return (
+        <div className="fixed inset-0 bg-emerald-950/90 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
+            <div className="bg-white w-full max-w-sm rounded-[32px] p-6 space-y-5 shadow-2xl animate-in zoom-in duration-300">
+                <div className="text-center space-y-2">
+                    <div className="w-14 h-14 bg-emerald-50 rounded-2xl mx-auto flex items-center justify-center mb-2">
+                        <Activity size={28} className="text-emerald-600 animate-pulse" />
+                    </div>
+                    <h3 className="text-xl font-black text-emerald-950">Phân tích thể trạng</h3>
                 </div>
-                <div>
-                   <h3 className="text-2xl font-black text-emerald-950 tracking-tight">Cơ thể bạn nói gì?</h3>
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Phân tích thể trạng bởi Fomi</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 p-4 rounded-[20px] text-center border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase">BMI</p>
+                        <p className="text-2xl font-black text-emerald-950">{bodyAnalysis.bmi}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-[20px] text-center border border-gray-100 flex flex-col justify-center">
+                        <p className="text-[10px] font-black text-gray-400 uppercase">Trạng thái</p>
+                        <p className={`text-sm font-black ${bodyAnalysis.color}`}>{bodyAnalysis.status}</p>
+                    </div>
                 </div>
-             </div>
 
-             <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50/80 p-4 rounded-[24px] border border-gray-100 text-center">
-                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">BMI</p>
-                   <p className="text-3xl font-black text-emerald-950 mt-1">{bodyAnalysis.bmi}</p>
+                <div className="bg-emerald-950 p-5 rounded-[24px] text-white">
+                    <p className="text-[10px] font-black text-emerald-400 uppercase mb-2">Lời khuyên từ Fomi</p>
+                    <p className="text-sm font-medium italic opacity-90 leading-relaxed">"{bodyAnalysis.advice}"</p>
                 </div>
-                <div className="bg-gray-50/80 p-4 rounded-[24px] border border-gray-100 text-center flex flex-col justify-center items-center">
-                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Phân loại</p>
-                   <p className={`text-sm font-black mt-1 leading-tight ${bodyAnalysis.color}`}>{bodyAnalysis.status}</p>
-                </div>
-             </div>
 
-             <div className="bg-emerald-950 p-5 rounded-[32px] text-white relative overflow-hidden shadow-xl border border-white/10">
-                <div className="flex gap-3 relative z-10">
-                   <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
-                      <Zap size={16} fill="white" />
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Lời khuyên từ Fomi</p>
-                      <p className="text-xs font-bold leading-relaxed italic opacity-90">
-                         "{bodyAnalysis.advice}"
-                      </p>
-                   </div>
-                </div>
-             </div>
-
-             <button 
-               onClick={() => { setShowAnalysis(false); nextStep(); }}
-               className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-200 flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-95 transition-all"
-             >
-                Xác nhận & Tiếp tục <ChevronRight size={16} />
-             </button>
-          </div>
-        </div>
-      )}
-
-      <div key={step} className="w-full relative z-10 space-y-6 animate-in slide-in-from-right-8 duration-500 overflow-y-auto max-h-full py-2 no-scrollbar">
-        {step > 1 && step < 6 && (
-          <div className="flex gap-1.5 justify-center mb-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all duration-700 ${step >= i ? 'bg-emerald-600 w-6' : 'bg-gray-200 w-3'}`} />
-            ))}
-          </div>
-        )}
-
-        {step === 1 && (
-          <div className="text-center space-y-8 animate-in zoom-in duration-700">
-            {/* Mascot Container - Fomi Eating Watermelon */}
-            <div className="relative w-40 h-40 mx-auto">
-               <div className="w-36 h-36 bg-[#b6e3f4] rounded-full mx-auto flex items-center justify-center shadow-2xl relative group border-[6px] border-white overflow-hidden">
-                 {/* Gấu Panda trắng */}
-                 <img src={MASCOT_URL} alt="Fomi" className="w-full h-full object-cover transform scale-125 translate-y-3" />
-               </div>
-               
-               {/* Dưa hấu Overlay - Tạo hiệu ứng đang cầm/ăn */}
-               <div className="absolute bottom-0 right-2 w-16 h-16 animate-bounce z-10 drop-shadow-lg" style={{ animationDuration: '2s' }}>
-                 <span className="text-5xl block transform -rotate-12">🍉</span>
-               </div>
-
-               {/* Hiệu ứng lấp lánh */}
-               <div className="absolute -top-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white border-2 border-[#FAFBFA] shadow-lg animate-bounce z-20">
-                  <Sparkles size={14} />
-               </div>
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-4xl font-black text-emerald-950 tracking-tighter">Fomi.</h1>
-              <p className="text-emerald-600 font-black uppercase text-[10px] tracking-[0.3em]">Sức khỏe từ bữa ăn</p>
-            </div>
-            <div className="space-y-3">
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Tên của bạn là gì?" 
-                  className="w-full bg-white border-2 border-emerald-50 rounded-[24px] px-6 py-4 text-center text-lg font-black focus:border-emerald-500 outline-none shadow-sm transition-all focus:shadow-xl focus:shadow-emerald-500/5"
-                  onChange={(e) => setData({ ...data, name: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && data.name && nextStep()}
-                />
-              </div>
-              <button 
-                disabled={!data.name}
-                onClick={nextStep}
-                className="w-full bg-emerald-600 text-white font-black py-4 rounded-[24px] shadow-xl shadow-emerald-200 disabled:opacity-40 transition-all active:scale-95 text-xs uppercase tracking-widest"
-              >
-                Bắt đầu ngay
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Các Step khác giữ nguyên logic nhưng có thể thêm Mascot nhỏ ở góc nếu cần */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <div className="space-y-1 text-center">
-              <h2 className="text-3xl font-black text-emerald-950 tracking-tight leading-tight">Mục tiêu?</h2>
-              <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Fomi sẽ cân đối thực đơn cho bạn</p>
-            </div>
-            <div className="grid gap-3">
-              {['Giảm cân', 'Giữ dáng', 'Tăng cơ'].map((g) => (
-                <button
-                  key={g}
-                  onClick={() => { setData({ ...data, goal: g as any }); nextStep(); }}
-                  className="w-full p-6 bg-white border-2 border-emerald-50 rounded-[32px] text-left hover:border-emerald-500 transition-all shadow-sm flex items-center justify-between group active:scale-[0.98] hover:shadow-lg"
+                <button 
+                    onClick={() => { setShowAnalysis(false); nextStep(); }}
+                    className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl text-sm uppercase tracking-wider active:scale-95 transition-all"
                 >
-                  <span className="text-xl font-black text-emerald-950">{g}</span>
-                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-inner">
-                     <ChevronRight size={20} />
-                  </div>
+                    Đã hiểu, tiếp tục
                 </button>
-              ))}
             </div>
-            <button onClick={prevStep} className="w-full text-center py-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-emerald-600 transition-colors">Quay lại</button>
-          </div>
-        )}
+        </div>
+      )
+  }
 
-        {step === 3 && (
-          <div className="space-y-6">
-            <div className="space-y-1 text-center">
-              <h2 className="text-2xl font-black text-emerald-950 tracking-tight">Thông số sức khỏe</h2>
-              <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest italic">Không bắt buộc</p>
+  return (
+    <div className="flex flex-col h-full bg-[#FAFBFA] overflow-hidden">
+      
+      {/* 1. HEADER (Fixed) */}
+      <div className="shrink-0 pt-4 pb-1 px-6">
+         {step > 1 && step < 6 && (
+            <div className="flex gap-1.5 justify-center mb-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${step >= i ? 'bg-emerald-600 w-8' : 'bg-gray-200 w-2.5'}`} />
+                ))}
             </div>
+         )}
+         
+         <div className="text-center space-y-1 min-h-[36px]">
+            {step === 1 && <h1 className="text-2xl font-black text-emerald-950 tracking-tighter">Chào bạn mới!</h1>}
+            {step === 2 && <h2 className="text-xl font-black text-emerald-950">Mục tiêu chính?</h2>}
+            {step === 3 && <h2 className="text-xl font-black text-emerald-950">Chỉ số cơ thể</h2>}
+            {step === 4 && <h2 className="text-xl font-black text-emerald-950">Bạn ở vùng nào?</h2>}
+            {step === 5 && <h2 className="text-xl font-black text-emerald-950">Sở thích & Lưu ý?</h2>}
+            {step === 6 && <h2 className="text-xl font-black text-emerald-950">Hồ sơ dinh dưỡng</h2>}
+         </div>
+      </div>
+
+      {/* 2. BODY (Flexible & Centered) - No Scroll on content steps */}
+      <div className="flex-1 px-6 py-2 flex flex-col justify-center min-h-0 overflow-hidden">
             
-            {!useBodyData ? (
-               <div className="space-y-3">
-                  <button 
-                    onClick={() => setUseBodyData(true)}
-                    className="w-full p-6 bg-white border-2 border-emerald-50 rounded-[32px] text-center space-y-3 shadow-sm hover:border-emerald-500 transition-all group"
-                  >
-                     <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-[20px] mx-auto flex items-center justify-center group-hover:scale-110 transition-transform"><Scale size={28} /></div>
-                     <div>
-                        <p className="text-lg font-black text-emerald-950">Nhập chỉ số</p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Để Fomi tư vấn chi tiết hơn</p>
+            {step === 1 && (
+                <div className="w-full flex flex-col items-center gap-6">
+                    <div className="relative w-36 h-36">
+                        <div className="w-full h-full bg-[#b6e3f4] rounded-full flex items-center justify-center shadow-xl border-[6px] border-white overflow-hidden">
+                            <img src={MASCOT_URL} alt="Fomi" className="w-full h-full object-cover transform scale-125 translate-y-3" />
+                        </div>
+                        <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-2 rounded-full border-4 border-[#FAFBFA] animate-bounce">
+                            <Sparkles size={20} />
+                        </div>
+                    </div>
+                    <div className="w-full">
+                         <input 
+                            type="text" 
+                            placeholder="Nhập tên của bạn..." 
+                            className="w-full bg-white border-2 border-emerald-50 rounded-[24px] px-6 py-4 text-center text-lg font-black focus:border-emerald-500 outline-none shadow-sm transition-all text-emerald-950 placeholder:text-gray-300"
+                            onChange={(e) => setData({ ...data, name: e.target.value })}
+                            onKeyDown={(e) => e.key === 'Enter' && data.name && nextStep()}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {step === 2 && (
+                <div className="w-full grid gap-3">
+                    {['Giảm cân', 'Giữ dáng', 'Tăng cơ'].map((g) => (
+                    <button
+                        key={g}
+                        onClick={() => { setData({ ...data, goal: g as any }); nextStep(); }}
+                        className="w-full p-5 bg-white border border-emerald-50 rounded-[24px] text-left hover:border-emerald-500 transition-all shadow-sm flex items-center justify-between group active:scale-[0.98]"
+                    >
+                        <span className="text-lg font-black text-emerald-950">{g}</span>
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                             <ChevronRight size={20} />
+                        </div>
+                    </button>
+                    ))}
+                </div>
+            )}
+
+            {step === 3 && (
+                 <div className="w-full">
+                {!useBodyData ? (
+                    <button 
+                        onClick={() => setUseBodyData(true)}
+                        className="w-full p-8 bg-white border border-emerald-50 rounded-[32px] text-center space-y-3 shadow-sm hover:border-emerald-500 transition-all group"
+                    >
+                        <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-[24px] mx-auto flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform"><Scale size={32} /></div>
+                        <div>
+                            <p className="text-lg font-black text-emerald-950">Nhập chỉ số</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Để Fomi tư vấn chi tiết</p>
+                        </div>
+                    </button>
+                ) : (
+                    <div className="w-full bg-white p-5 rounded-[28px] border border-emerald-50 shadow-sm space-y-3">
+                        <div className="flex gap-2">
+                             {['Nam', 'Nữ'].map(g => (
+                                <button 
+                                   key={g}
+                                   onClick={() => setData({...data, gender: g as any})}
+                                   className={`flex-1 py-3 rounded-xl font-black text-sm border transition-all ${data.gender === g ? 'bg-emerald-950 border-emerald-950 text-white' : 'bg-white border-emerald-50 text-gray-300'}`}
+                                >
+                                   {g}
+                                </button>
+                             ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                             <div className="space-y-1">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Tuổi</label>
+                                 <input type="number" placeholder="25" onChange={(e) => setData({...data, age: parseInt(e.target.value)})} className="w-full bg-gray-50 rounded-xl px-4 py-3 font-black text-emerald-950 outline-none focus:bg-white border border-transparent focus:border-emerald-500" />
+                             </div>
+                             <div className="space-y-1">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Cao (cm)</label>
+                                 <input type="number" placeholder="170" onChange={(e) => setData({...data, height: parseInt(e.target.value)})} className="w-full bg-gray-50 rounded-xl px-4 py-3 font-black text-emerald-950 outline-none focus:bg-white border border-transparent focus:border-emerald-500" />
+                             </div>
+                        </div>
+                        <div className="space-y-1">
+                             <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Nặng (kg)</label>
+                             <input type="number" placeholder="60" onChange={(e) => setData({...data, weight: parseInt(e.target.value)})} className="w-full bg-gray-50 rounded-xl px-4 py-3 font-black text-emerald-950 outline-none focus:bg-white border border-transparent focus:border-emerald-500" />
+                        </div>
+                        <div className="space-y-1">
+                             <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Vận động</label>
+                             <select onChange={(e) => setData({...data, activityLevel: e.target.value as any})} className="w-full bg-gray-50 rounded-xl px-4 py-3 font-black text-emerald-950 text-xs outline-none focus:bg-white border border-transparent focus:border-emerald-500 appearance-none">
+                                {activityLevels.map(a => <option key={a.id} value={a.id}>{a.id}</option>)}
+                             </select>
+                        </div>
+                    </div>
+                )}
+                </div>
+            )}
+
+            {step === 4 && (
+                <div className="w-full grid gap-3">
+                 {[Region.NORTH, Region.CENTRAL, Region.SOUTH].map((r) => (
+                   <button
+                     key={r}
+                     onClick={() => { setData({ ...data, region: r }); nextStep(); }}
+                     className={`w-full p-5 rounded-[24px] text-left border transition-all flex items-center justify-between active:scale-[0.98] ${
+                       data.region === r ? 'border-emerald-500 bg-white shadow-md' : 'border-white bg-white/80 hover:bg-white'
+                     }`}
+                   >
+                     <span className="text-lg font-black text-emerald-950">Miền {r}</span>
+                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${data.region === r ? 'bg-emerald-50 text-emerald-500' : 'bg-gray-50 text-gray-300'}`}>
+                        <MapPin size={20} />
                      </div>
-                  </button>
-                  <button 
-                    onClick={() => { setUseBodyData(false); nextStep(); }}
-                    className="w-full py-4 bg-gray-50 text-gray-400 font-black rounded-[24px] text-[10px] uppercase tracking-widest hover:bg-gray-100 transition-all"
-                  >
-                     Bỏ qua
-                  </button>
-               </div>
-            ) : (
-               <div className="space-y-6 animate-in slide-in-from-bottom-8">
-                  <div className="grid grid-cols-2 gap-3">
-                     <div className="col-span-2 flex gap-2">
-                        {['Nam', 'Nữ'].map(g => (
-                           <button 
-                              key={g}
-                              onClick={() => setData({...data, gender: g as any})}
-                              className={`flex-1 py-3 rounded-xl font-black text-xs border-2 transition-all ${data.gender === g ? 'bg-emerald-950 border-emerald-950 text-white shadow-md' : 'bg-white border-emerald-50 text-gray-300'}`}
-                           >
-                              {g}
-                           </button>
-                        ))}
-                     </div>
-                     <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-2">Tuổi</label>
-                        <input type="number" placeholder="25" onChange={(e) => setData({...data, age: parseInt(e.target.value)})} className="w-full bg-white border-2 border-emerald-50 rounded-xl px-4 py-3 font-black text-emerald-950 outline-none focus:border-emerald-500 text-sm" />
-                     </div>
-                     <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-2">Chiều cao (cm)</label>
-                        <input type="number" placeholder="170" onChange={(e) => setData({...data, height: parseInt(e.target.value)})} className="w-full bg-white border-2 border-emerald-50 rounded-xl px-4 py-3 font-black text-emerald-950 outline-none focus:border-emerald-500 text-sm" />
-                     </div>
-                     <div className="space-y-1 col-span-2">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-2">Cân nặng (kg)</label>
-                        <input type="number" placeholder="60" onChange={(e) => setData({...data, weight: parseInt(e.target.value)})} className="w-full bg-white border-2 border-emerald-50 rounded-xl px-4 py-3 font-black text-emerald-950 outline-none focus:border-emerald-500 text-sm" />
-                     </div>
-                     <div className="col-span-2 space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-2">Mức độ vận động</label>
-                        <select onChange={(e) => setData({...data, activityLevel: e.target.value as any})} className="w-full bg-white border-2 border-emerald-50 rounded-xl px-4 py-3 font-black text-emerald-950 outline-none focus:border-emerald-500 appearance-none cursor-pointer text-sm">
-                           {activityLevels.map(a => <option key={a.id} value={a.id}>{a.id}</option>)}
-                        </select>
-                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                     <button onClick={() => setUseBodyData(false)} className="w-14 h-14 bg-white border-2 border-emerald-50 rounded-[20px] flex items-center justify-center text-emerald-950 hover:bg-emerald-50 transition-colors"><ChevronLeft size={24} /></button>
-                     <button 
-                        disabled={!data.age || !data.height || !data.weight}
-                        onClick={() => setShowAnalysis(true)} 
-                        className="flex-1 bg-emerald-600 text-white font-black rounded-[20px] flex items-center justify-center gap-2 disabled:opacity-40 uppercase text-xs tracking-widest shadow-xl shadow-emerald-200 active:scale-95 transition-all"
-                     >
-                        Phân tích <Activity size={16} />
-                     </button>
-                  </div>
+                   </button>
+                 ))}
                </div>
             )}
-          </div>
-        )}
 
-        {step === 4 && (
-          <div className="space-y-6">
-            <div className="space-y-1 text-center">
-              <h2 className="text-3xl font-black text-emerald-950 leading-tight tracking-tight">Vùng miền?</h2>
-              <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Gợi ý món ăn chuẩn vị</p>
-            </div>
-            <div className="grid gap-3">
-              {[Region.NORTH, Region.CENTRAL, Region.SOUTH].map((r) => (
-                <button
-                  key={r}
-                  onClick={() => { setData({ ...data, region: r }); nextStep(); }}
-                  className={`w-full p-6 rounded-[32px] text-left border-2 transition-all flex items-center justify-between group active:scale-[0.98] ${
-                    data.region === r ? 'border-emerald-500 bg-white shadow-xl shadow-emerald-500/10' : 'border-white bg-white opacity-80 hover:opacity-100 hover:border-emerald-100'
-                  }`}
-                >
-                  <span className="text-xl font-black text-emerald-950">Miền {r}</span>
-                  <MapPin size={24} className={data.region === r ? 'text-emerald-500 animate-bounce' : 'text-gray-200'} />
-                </button>
-              ))}
-            </div>
-            <button onClick={prevStep} className="w-full text-center py-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-emerald-600 transition-colors">Quay lại</button>
-          </div>
-        )}
+            {step === 5 && (
+                <div className="w-full h-full flex flex-col gap-2 overflow-hidden">
+                    {/* Panel 1: Preferences - Shrinkable but robust */}
+                    <div className="flex flex-col gap-1.5 shrink-0 bg-white p-3 rounded-[24px] border border-gray-50 shadow-sm">
+                        <div className="flex justify-between items-center">
+                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Món chính</p>
+                             <div className="flex gap-1.5">
+                                 <input 
+                                    type="text"
+                                    value={customInputs.preferences}
+                                    onChange={(e) => setCustomInputs({...customInputs, preferences: e.target.value})}
+                                    onKeyDown={(e) => e.key === 'Enter' && addCustomItem('preferences')}
+                                    placeholder="+ Thêm..."
+                                    className="w-20 bg-gray-50 rounded-lg px-2 py-1 text-[10px] outline-none"
+                                 />
+                                 <button onClick={() => addCustomItem('preferences')} className="bg-emerald-50 text-emerald-600 rounded-lg p-1"><Plus size={12}/></button>
+                             </div>
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                            {tasteGroups[0].items.map((item) => (
+                                <button
+                                key={item.id}
+                                onClick={() => toggleList('preferences', item.id)}
+                                className={`flex flex-col items-center justify-center gap-1 p-2 rounded-[16px] text-[9px] font-black border transition-all shrink-0 w-16 h-16 ${
+                                    data.preferences?.includes(item.id) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-gray-50 border-transparent text-gray-400'
+                                }`}
+                                >
+                                <div className="scale-100">{item.icon}</div>
+                                <span className="truncate w-full text-center">{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                        {/* Selected Chips */}
+                         <div className="flex flex-wrap gap-1 max-h-[40px] overflow-y-auto">
+                             {data.preferences?.filter(p => !tasteGroups[0].items.some(i => i.id === p)).map(p => (
+                                 <span key={p} className="bg-emerald-100 text-emerald-900 text-[9px] px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
+                                     {p} <button onClick={() => removeCustomItem('preferences', p)}><X size={10} /></button>
+                                 </span>
+                             ))}
+                        </div>
+                    </div>
+                    
+                    {/* Panel 2: Flavors */}
+                    <div className="flex flex-col gap-1.5 shrink-0 bg-white p-3 rounded-[24px] border border-gray-50 shadow-sm">
+                        <div className="flex justify-between items-center">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Khẩu vị</p>
+                            <div className="flex gap-1.5">
+                                 <input 
+                                    type="text"
+                                    value={customInputs.flavors}
+                                    onChange={(e) => setCustomInputs({...customInputs, flavors: e.target.value})}
+                                    onKeyDown={(e) => e.key === 'Enter' && addCustomItem('flavors')}
+                                    placeholder="+ Thêm..."
+                                    className="w-20 bg-gray-50 rounded-lg px-2 py-1 text-[10px] outline-none"
+                                 />
+                                 <button onClick={() => addCustomItem('flavors')} className="bg-emerald-50 text-emerald-600 rounded-lg p-1"><Plus size={12}/></button>
+                             </div>
+                        </div>
+                        <div className="flex gap-2">
+                            {flavorProfiles.map((f) => (
+                            <button
+                                key={f.id}
+                                onClick={() => toggleList('flavors', f.id)}
+                                className={`flex-1 py-2.5 rounded-xl text-[10px] font-black border transition-all ${
+                                data.flavors?.includes(f.id) ? 'bg-emerald-950 border-emerald-950 text-white' : 'bg-gray-50 border-transparent text-gray-400'
+                                }`}
+                            >
+                                {f.label}
+                            </button>
+                            ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1 max-h-[40px] overflow-y-auto">
+                             {data.flavors?.filter(f => !flavorProfiles.some(fp => fp.id === f)).map(f => (
+                                 <span key={f} className="bg-emerald-100 text-emerald-900 text-[9px] px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
+                                     {f} <button onClick={() => removeCustomItem('flavors', f)}><X size={10} /></button>
+                                 </span>
+                             ))}
+                        </div>
+                    </div>
 
-        {step === 5 && (
-          <div className="space-y-6">
-            <div className="space-y-1 text-center">
-               <h2 className="text-2xl font-black text-emerald-950 leading-tight">Sở thích?</h2>
-               <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Ưu tiên món bạn thích</p>
-            </div>
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-2">
-                {tasteGroups[0].items.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleList('preferences', item.id)}
-                    className={`flex items-center gap-2 p-4 rounded-[24px] text-[10px] font-black border-2 transition-all active:scale-[0.96] ${
-                      data.preferences?.includes(item.id) ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white border-emerald-50 text-gray-400'
-                    }`}
-                  >
-                    {item.icon} {item.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                {flavorProfiles.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => toggleList('flavors', f.id)}
-                    className={`flex-1 p-4 rounded-[24px] text-[10px] font-black border-2 transition-all active:scale-[0.96] ${
-                      data.flavors?.includes(f.id) ? 'bg-emerald-950 border-emerald-950 text-white shadow-lg' : 'bg-white border-emerald-50 text-gray-400'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button onClick={prevStep} className="w-14 h-14 bg-white border-2 border-emerald-50 rounded-[20px] flex items-center justify-center text-emerald-950 active:scale-90 transition-all"><ChevronLeft size={24} /></button>
-              <button onClick={nextStep} className="flex-1 bg-emerald-600 text-white font-black rounded-[20px] flex items-center justify-center gap-2 uppercase text-xs tracking-widest shadow-xl shadow-emerald-200 active:scale-95 transition-all">Hoàn tất <CheckCircle2 size={18} /></button>
-            </div>
-          </div>
-        )}
+                    {/* Panel 3: Allergies - Takes remaining space */}
+                    <div className="flex-1 min-h-0 bg-white p-3 rounded-[24px] border border-red-50 shadow-sm flex flex-col gap-1.5">
+                         <div className="flex justify-between items-center">
+                            <p className="text-[10px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1">
+                                <AlertOctagon size={12} /> Dị ứng
+                            </p>
+                             <div className="flex gap-1.5">
+                                 <input 
+                                    type="text"
+                                    value={customInputs.allergies}
+                                    onChange={(e) => setCustomInputs({...customInputs, allergies: e.target.value})}
+                                    onKeyDown={(e) => e.key === 'Enter' && addCustomItem('allergies')}
+                                    placeholder="+ Khác..."
+                                    className="w-20 bg-red-50 rounded-lg px-2 py-1 text-[10px] outline-none placeholder:text-red-300 text-red-900"
+                                 />
+                                 <button onClick={() => addCustomItem('allergies')} className="bg-red-50 text-red-500 rounded-lg p-1"><Plus size={12}/></button>
+                             </div>
+                         </div>
+                         <div className="flex-1 overflow-y-auto content-start flex flex-wrap gap-2">
+                            {allergyOptions.map((a) => (
+                                <button
+                                    key={a.id}
+                                    onClick={() => toggleList('allergies', a.id)}
+                                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all h-fit ${
+                                        data.allergies?.includes(a.id) ? 'bg-red-50 text-red-500 border-red-200' : 'bg-gray-50 border-transparent text-gray-400'
+                                    }`}
+                                >
+                                    {a.label}
+                                </button>
+                            ))}
+                            {data.allergies?.filter(a => !allergyOptions.some(ao => ao.id === a)).map(a => (
+                                 <span key={a} className="bg-red-100 text-red-900 text-[10px] px-2 py-1.5 rounded-full flex items-center gap-1 font-bold h-fit border border-red-200">
+                                     {a} <button onClick={() => removeCustomItem('allergies', a)}><X size={10} /></button>
+                                 </span>
+                             ))}
+                         </div>
+                    </div>
+                </div>
+            )}
 
-        {step === 6 && (
-          <div className="space-y-8 text-center animate-in zoom-in duration-1000">
-            <div className="space-y-4">
-               {/* Final Mascot Celebration */}
-               <div className="w-28 h-28 bg-[#b6e3f4] rounded-full mx-auto flex items-center justify-center animate-bounce shadow-2xl border-[6px] border-white overflow-hidden relative">
-                  <img src={MASCOT_URL} alt="Fomi" className="w-full h-full object-cover transform scale-125 translate-y-2" />
-               </div>
-               <div className="space-y-2">
-                  <h2 className="text-4xl font-black text-emerald-950 tracking-tighter">Sẵn sàng!</h2>
-                  <p className="text-gray-400 font-bold text-xs px-4 leading-relaxed">Fomi đã tối ưu hóa mọi thứ dành riêng cho <b>{data.name}</b>.</p>
-               </div>
-            </div>
+            {step === 6 && (
+                <div className="w-full h-full flex flex-col gap-3 overflow-hidden">
+                    {/* SCIFI CARD - Flex Grow to fill space but allow content to scroll internally if huge */}
+                    <div className="flex-1 bg-[#022c22] rounded-[32px] p-5 text-white shadow-2xl relative overflow-hidden border border-emerald-800 flex flex-col min-h-0">
+                        {/* Background Effects */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-10 translate-x-10 pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-900/40 rounded-full blur-2xl translate-y-10 -translate-x-10 pointer-events-none" />
+                        
+                        <div className="relative z-10 flex-1 overflow-y-auto no-scrollbar">
+                             <div className="flex justify-between items-start mb-4">
+                                 <div>
+                                     <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">
+                                         <Dna size={12} /> Fomi AI Plan
+                                     </div>
+                                     <h3 className="text-3xl font-black tracking-tight text-white leading-none">
+                                         {useBodyData ? calorieGoal.toLocaleString() : "2,000"} <span className="text-base font-bold text-emerald-400">Kcal</span>
+                                     </h3>
+                                 </div>
+                                 <div className="w-10 h-10 bg-emerald-900/50 rounded-2xl border border-emerald-700/50 flex items-center justify-center">
+                                     <Fingerprint size={20} className="text-emerald-400 opacity-80" />
+                                 </div>
+                             </div>
 
-            <div className="bg-emerald-950 p-8 rounded-[40px] text-center space-y-3 shadow-2xl relative overflow-hidden group">
-               <div className="relative z-10 space-y-1">
-                  <p className="text-emerald-400 text-[9px] font-black uppercase tracking-widest">Năng lượng tiêu chuẩn mỗi ngày</p>
-                  <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-5xl font-black text-white">{useBodyData ? calorieGoal : 2000}</span>
-                    <span className="text-[10px] font-black text-emerald-500 uppercase mt-3">Calo</span>
-                  </div>
-                  <div className="pt-2">
-                     <span className="bg-white/10 px-3 py-1 rounded-full text-[9px] text-emerald-200 font-bold uppercase tracking-wider">Mục tiêu: {data.goal}</span>
-                  </div>
-               </div>
-            </div>
+                             {/* Macro Grid */}
+                             <div className="grid grid-cols-3 gap-2 mb-4">
+                                 <div className="bg-emerald-900/40 border border-emerald-800/50 p-2.5 rounded-2xl backdrop-blur-sm">
+                                     <p className="text-[8px] text-emerald-300 font-bold uppercase mb-1">Protein</p>
+                                     <div className="h-1 w-full bg-emerald-950 rounded-full mb-1">
+                                         <div className="h-full bg-emerald-400 rounded-full w-[30%]"></div>
+                                     </div>
+                                     <p className="text-[10px] font-mono font-bold">{recs.macro.p}%</p>
+                                 </div>
+                                 <div className="bg-emerald-900/40 border border-emerald-800/50 p-2.5 rounded-2xl backdrop-blur-sm">
+                                     <p className="text-[8px] text-emerald-300 font-bold uppercase mb-1">Fats</p>
+                                     <div className="h-1 w-full bg-emerald-950 rounded-full mb-1">
+                                         <div className="h-full bg-emerald-400 rounded-full w-[30%]"></div>
+                                     </div>
+                                     <p className="text-[10px] font-mono font-bold">{recs.macro.f}%</p>
+                                 </div>
+                                 <div className="bg-emerald-900/40 border border-emerald-800/50 p-2.5 rounded-2xl backdrop-blur-sm">
+                                     <p className="text-[8px] text-emerald-300 font-bold uppercase mb-1">Carbs</p>
+                                     <div className="h-1 w-full bg-emerald-950 rounded-full mb-1">
+                                         <div className="h-full bg-emerald-400 rounded-full w-[40%]"></div>
+                                     </div>
+                                     <p className="text-[10px] font-mono font-bold">{recs.macro.c}%</p>
+                                 </div>
+                             </div>
+                             
+                             {/* Meal Timeline */}
+                             <div className="space-y-2 border-t border-emerald-800/50 pt-3">
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Phân bổ</p>
+                                <div className="flex gap-0.5 h-6 w-full">
+                                    <div className="h-full bg-emerald-500 rounded-l-md flex items-center justify-center text-[9px] font-bold w-[25%] shadow-[0_0_15px_rgba(16,185,129,0.3)]">Sáng</div>
+                                    <div className="h-full bg-emerald-600 flex items-center justify-center text-[9px] font-bold w-[40%] opacity-90">Trưa</div>
+                                    <div className="h-full bg-emerald-800 rounded-r-md flex items-center justify-center text-[9px] font-bold w-[35%] opacity-80">Tối</div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
 
-            <button 
-              onClick={handleFinish}
-              className="w-full py-5 bg-emerald-600 text-white font-black rounded-[32px] shadow-2xl shadow-emerald-200 flex items-center justify-center gap-3 text-sm uppercase tracking-widest active:scale-95 transition-all"
-            >
-              Khám phá ngay <Sparkles size={18} className="animate-sparkle" />
-            </button>
-          </div>
-        )}
+                    {/* Scientific Suggestions - Shrinkable */}
+                    <div className="shrink-0 space-y-1.5 pb-2">
+                        <div className="flex items-center justify-between px-1">
+                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                 <ScanLine size={12} /> Recommended
+                             </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                             {recs.foods.slice(0, 4).map((food, i) => (
+                                 <div key={i} className="bg-white border border-gray-100 p-2 rounded-xl flex items-center gap-2 shadow-sm">
+                                     <div className="w-1 h-5 bg-emerald-500 rounded-full"></div>
+                                     <span className="text-[10px] font-bold text-emerald-900">{food}</span>
+                                 </div>
+                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
       </div>
+
+      {/* 3. FOOTER (Fixed) */}
+      <div className="shrink-0 p-5 bg-white border-t border-gray-50 z-20">
+         {step === 1 && (
+             <button 
+                disabled={!data.name}
+                onClick={nextStep}
+                className="w-full bg-emerald-600 text-white font-black py-4 rounded-[24px] shadow-xl shadow-emerald-200 disabled:opacity-40 transition-all active:scale-95 text-sm uppercase tracking-widest"
+             >
+                Bắt đầu ngay
+             </button>
+         )}
+
+         {(step === 2 || step === 4) && (
+             <button onClick={prevStep} className="w-full text-center py-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-emerald-600">Quay lại</button>
+         )}
+
+         {step === 3 && (
+             <div className="flex gap-3">
+                 <button onClick={() => setUseBodyData(false)} className="w-14 h-14 bg-white border border-emerald-50 rounded-[20px] flex items-center justify-center text-emerald-950 hover:bg-emerald-50"><ChevronLeft size={24} /></button>
+                 {!useBodyData ? (
+                      <button 
+                      onClick={() => { setUseBodyData(false); nextStep(); }}
+                      className="flex-1 bg-gray-100 text-gray-400 font-black rounded-[20px] text-xs uppercase tracking-widest active:scale-95 transition-all"
+                   >
+                      Bỏ qua
+                   </button>
+                 ) : (
+                    <button 
+                    disabled={!data.age || !data.height || !data.weight}
+                    onClick={() => setShowAnalysis(true)} 
+                    className="flex-1 bg-emerald-600 text-white font-black rounded-[20px] flex items-center justify-center gap-2 disabled:opacity-50 text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                 >
+                    Phân tích <Activity size={16} />
+                 </button>
+                 )}
+            </div>
+         )}
+
+         {step === 5 && (
+             <div className="flex gap-3">
+                <button onClick={prevStep} className="w-14 h-14 bg-white border border-emerald-50 rounded-[20px] flex items-center justify-center text-emerald-950 hover:bg-emerald-50"><ChevronLeft size={24} /></button>
+                <button onClick={nextStep} className="flex-1 bg-emerald-600 text-white font-black rounded-[20px] flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                    Hoàn tất <CheckCircle2 size={18} />
+                </button>
+            </div>
+         )}
+
+         {step === 6 && (
+             <button 
+                 onClick={handleFinish}
+                 className="w-full py-4 bg-emerald-950 text-white font-black rounded-[28px] shadow-2xl shadow-emerald-900/30 flex items-center justify-center gap-2 text-sm uppercase tracking-widest active:scale-95 transition-all"
+             >
+                 Khởi động Fomi <Sparkles size={18} />
+             </button>
+         )}
+      </div>
+
     </div>
   );
 };

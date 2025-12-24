@@ -4,7 +4,7 @@ import { UserProfile, ShoppingItem, Meal } from '../types';
 import { getMarketDetails } from '../services/geminiService';
 import { 
   CheckCircle2, ShoppingCart, MapPin, Package, Zap, Trash2, 
-  Loader2, ChevronUp, ChefHat, Store, ChevronDown
+  Loader2, ChevronUp, ChefHat, Store, Check
 } from 'lucide-react';
 
 interface ShoppingListProps {
@@ -70,6 +70,9 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart, act
   const totalPrice = cart.reduce((acc, item) => acc + (item.price || 0), 0);
   const isAllBought = cart.every(item => item.isBought);
 
+  // Nguyên liệu có sẵn từ activeMeal
+  const availableIngredients = activeMeal?.ingredientsFound || [];
+
   return (
     <div className="flex flex-col h-full bg-[#FAFBFA]">
       {/* Header */}
@@ -93,20 +96,45 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart, act
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 pb-32">
+        {/* Available Ingredients Section */}
+        {availableIngredients.length > 0 && (
+           <div className="space-y-2">
+              <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
+                 <CheckCircle2 size={12} /> Đã có sẵn tại nhà ({availableIngredients.length})
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                 {availableIngredients.map((ing, idx) => (
+                    <div key={idx} className="bg-emerald-50/50 border border-emerald-100 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+                        <Check size={12} className="text-emerald-500" />
+                        <span className="text-xs font-bold text-emerald-900 opacity-70">{ing}</span>
+                    </div>
+                 ))}
+              </div>
+           </div>
+        )}
+
         {/* Shopping List Section */}
-        <section>
+        <section className="space-y-2">
+          {availableIngredients.length > 0 && (
+             <h3 className="text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-1.5 pt-2 border-t border-gray-50">
+                <ShoppingCart size={12} /> Cần mua thêm ({cart.length})
+             </h3>
+          )}
+
           {cart.length === 0 ? (
-            activeMeal ? (
-               <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 text-center space-y-2">
+            activeMeal && availableIngredients.length > 0 ? (
+               <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 text-center space-y-2 mt-4">
                  <CheckCircle2 size={32} className="text-emerald-500 mx-auto" />
-                 <p className="text-sm font-bold text-emerald-900">Đã đủ nguyên liệu!</p>
-                 <p className="text-xs text-gray-500">Bạn có thể bắt đầu nấu ngay.</p>
+                 <p className="text-sm font-bold text-emerald-900">Đã đủ hết nguyên liệu!</p>
+                 <p className="text-xs text-gray-500">Tuyệt vời, bạn có thể nấu ngay không cần đi chợ.</p>
                </div>
             ) : (
-               <div className="bg-white border-2 border-dashed border-gray-100 rounded-2xl p-10 text-center space-y-2">
-                 <Package size={32} className="text-gray-200 mx-auto" />
-                 <p className="text-sm font-bold text-gray-400">Giỏ hàng đang trống</p>
-               </div>
+               !activeMeal && (
+                <div className="bg-white border-2 border-dashed border-gray-100 rounded-2xl p-10 text-center space-y-2 mt-4">
+                    <Package size={32} className="text-gray-200 mx-auto" />
+                    <p className="text-sm font-bold text-gray-400">Giỏ hàng đang trống</p>
+                </div>
+               )
             )
           ) : (
             <div className="space-y-3">
@@ -137,7 +165,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ profile, cart, setCart, act
 
         {/* Market Finder Button */}
         {cart.length > 0 && (
-           <div className="space-y-3">
+           <div className="space-y-3 pt-2">
               <button 
                 onClick={handleFindMarkets}
                 disabled={loadingMarket}

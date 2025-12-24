@@ -184,21 +184,39 @@ export const getDishesFromIngredients = async (profile: UserProfile, ingredients
   }
 };
 
-export const generateDailyPlan = async (profile: UserProfile, customCalories?: number, customFlavors?: string[]) => {
+export const generateDailyPlan = async (profile: UserProfile, customCalories?: number, customFlavors?: string[], ingredients?: string[]) => {
   const ai = getAIClient();
   const targetCalories = customCalories || profile.calorieGoal || 2000;
   const targetFlavors = customFlavors && customFlavors.length > 0 ? customFlavors : profile.flavors;
   
-  const prompt = `Tạo thực đơn 3 bữa (Sáng, Trưa, Tối) hoàn chỉnh cho 1 ngày theo phong cách người Việt miền ${profile.region}.
-  Mục tiêu sức khỏe: ${profile.goal}. 
-  Khẩu vị ưu tiên: ${targetFlavors.join(", ")}.
-  Tổng calo mục tiêu: ${targetCalories} kcal.
+  // Xây dựng prompt chặt chẽ hơn
+  const hasIngredients = ingredients && ingredients.length > 0;
+  const ingredientPrompt = hasIngredients ? `BẮT BUỘC SỬ DỤNG nguyên liệu: ${ingredients.join(", ")}.` : "Gợi ý nguyên liệu dễ tìm.";
+  
+  const allergyPrompt = profile.allergies && profile.allergies.length > 0 
+    ? `TUYỆT ĐỐI TRÁNH các thành phần sau: ${profile.allergies.join(", ")}.` 
+    : "";
 
-  QUY TẮC QUAN TRỌNG:
-  1. Bữa Sáng: Người Việt thường không nấu cầu kỳ buổi sáng. Hãy gợi ý món nhanh (Bánh mì, Xôi, Trứng luộc) hoặc "Ăn ngoài" (Phở, Bún bò - đánh dấu isEatOut=true).
-  2. Bữa Trưa & Tối: Phải là Mâm cơm gồm Cơm + Món Mặn (Kho/Rim) + Món Canh/Rau + Tráng miệng trái cây. Đặt tên món là combo (VD: "Cơm Sườn rim & Canh cải").
-  3. Không gợi ý nấu Phở/Bún tại nhà cho bữa trưa/tối vì tốn thời gian.
-  4. Chia calo hợp lý: Sáng (25%), Trưa (40%), Tối (35%).
+  const preferencesPrompt = profile.preferences && profile.preferences.length > 0
+    ? `Ưu tiên các món chính từ: ${profile.preferences.join(", ")}.`
+    : "";
+
+  const prompt = `Tạo thực đơn 3 bữa (Sáng, Trưa, Tối) hoàn chỉnh cho 1 ngày theo phong cách người Việt miền ${profile.region}.
+  
+  THÔNG TIN NGƯỜI DÙNG:
+  - Mục tiêu: ${profile.goal}
+  - Khẩu vị: ${targetFlavors.join(", ")}
+  - Tổng calo mục tiêu: ${targetCalories} kcal
+  - ${preferencesPrompt}
+  - ${ingredientPrompt}
+  - ${allergyPrompt}
+
+  QUY TẮC BẮT BUỘC:
+  1. Bữa Sáng: Món nhanh (Bánh mì, Xôi, Trứng) hoặc "Ăn ngoài" (Phở, Bún).
+  2. Bữa Trưa & Tối: Phải là Mâm cơm gồm Cơm + Món Mặn + Canh/Rau. Đặt tên món là combo (VD: "Cơm Sườn rim & Canh cải").
+  3. Nếu có nguyên liệu đầu vào, phải ưu tiên dùng chúng cho món chính.
+  4. Nếu dị ứng được nêu, kiểm tra kỹ thành phần để loại bỏ hoàn toàn.
+  5. Chia calo hợp lý: Sáng (25%), Trưa (40%), Tối (35%).
 
   Yêu cầu trả về JSON mảng 3 món ăn chi tiết.`;
 

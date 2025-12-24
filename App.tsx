@@ -121,10 +121,10 @@ const App: React.FC = () => {
     setActiveCookingMeal(null);
   };
 
-  const handleGeneratePlan = async (calories: number, flavors: string[]) => {
+  const handleGeneratePlan = async (calories: number, flavors: string[], ingredients: string[]) => {
     if (userProfile) {
        setIsGeneratingPlan(true);
-       const plan = await generateDailyPlan(userProfile, calories, flavors);
+       const plan = await generateDailyPlan(userProfile, calories, flavors, ingredients);
        setAiSuggestions(plan);
        setPlanMode('day');
        setIsGeneratingPlan(false);
@@ -280,7 +280,7 @@ const App: React.FC = () => {
       {/* Container chính cho các View */}
       <div key={currentView} className="flex-1 w-full h-full overflow-hidden flex flex-col relative view-transition-enter">
         {currentView === 'home' && (
-          <div className="flex-1 overflow-y-auto pb-24">
+          <div className="flex-1 h-full">
             <Dashboard 
                 profile={userProfile} 
                 dailyLog={dailyLog} 

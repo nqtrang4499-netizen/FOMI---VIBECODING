@@ -17,6 +17,7 @@ export interface UserProfile {
   isLactoseIntolerant: boolean;
   preferences: string[];
   flavors: string[];
+  allergies: string[]; // Thêm trường dị ứng
   goal: 'Giảm cân' | 'Giữ dáng' | 'Tăng cơ';
   // Dữ liệu cơ thể
   weight?: number;
