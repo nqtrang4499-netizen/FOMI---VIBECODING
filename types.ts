@@ -5,6 +5,12 @@ export enum Region {
   SOUTH = 'Nam'
 }
 
+export interface HealthRecord {
+  date: string;
+  weight: number;
+  note?: string;
+}
+
 export interface UserProfile {
   name: string;
   region: Region;
@@ -19,6 +25,7 @@ export interface UserProfile {
   gender?: 'Nam' | 'Nữ';
   activityLevel?: 'Ít vận động' | 'Vận động nhẹ' | 'Vận động vừa' | 'Vận động mạnh';
   calorieGoal?: number;
+  healthHistory?: HealthRecord[];
 }
 
 export interface IngredientInput {

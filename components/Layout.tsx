@@ -1,15 +1,16 @@
 
 import React from 'react';
-import { LogOut, ChevronLeft } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
   onLogout: () => void;
   showBack?: boolean;
   onBack?: () => void;
+  onNext?: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onLogout, showBack, onBack }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onLogout, showBack, onBack, onNext }) => {
   return (
     <div className="max-w-md mx-auto min-h-screen bg-[#FAFBFA] flex flex-col relative overflow-hidden">
       {/* Decorative background element */}
@@ -33,14 +34,23 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout, showBack, on
           </div>
         </div>
         
-        <button 
-          onClick={() => {
-            if(confirm('Đăng xuất khỏi Fomi?')) onLogout();
-          }}
-          className="w-10 h-10 bg-white rounded-full text-gray-400 hover:text-red-500 flex items-center justify-center transition-all border border-emerald-50 shadow-sm"
-        >
-          <LogOut size={18} />
-        </button>
+        {onNext ? (
+           <button 
+             onClick={onNext}
+             className="w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center transition-all shadow-lg shadow-emerald-200 active:scale-90"
+           >
+             <ChevronRight size={20} />
+           </button>
+        ) : (
+           <button 
+             onClick={() => {
+               if(confirm('Đăng xuất khỏi Fomi?')) onLogout();
+             }}
+             className="w-10 h-10 bg-white rounded-full text-gray-400 hover:text-red-500 flex items-center justify-center transition-all border border-emerald-50 shadow-sm"
+           >
+             <LogOut size={18} />
+           </button>
+        )}
       </header>
 
       <main className="flex-1 relative z-10 pb-10">

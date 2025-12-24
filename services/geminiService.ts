@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { UserProfile, Meal, IngredientInput } from "../types";
+import { UserProfile, Meal, IngredientInput, HealthRecord, DailyLog } from "../types";
 
 const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -90,9 +90,15 @@ export const generateMealImage = async (prompt: string, size: "1K" | "2K" | "4K"
 
 export const getDishesFromIngredients = async (profile: UserProfile, ingredients: IngredientInput[]) => {
   const ai = getAIClient();
-  const prompt = `Gợi ý 3 món ăn ngon miền ${profile.region} từ nguyên liệu: ${ingredients.map(i => i.name).join(", ")}. 
+  const prompt = `Gợi ý 3 COMBO mâm cơm gia đình miền ${profile.region} từ nguyên liệu: ${ingredients.map(i => i.name).join(", ")}. 
   Dựa trên khẩu vị: ${profile.flavors.join(", ")} và mục tiêu: ${profile.goal}.
-  Trả về JSON bao gồm tên món, mô tả, mẹo nấu ăn, thời gian hoàn thành (ví dụ: 15 phút), độ khó, các bước thực hiện và danh sách nguyên liệu thiếu kèm giá.`;
+  
+  QUY TẮC NGƯỜI VIỆT:
+  1. Mỗi gợi ý là một "Mâm cơm" gồm: 1 Món Mặn (Kho/Chiên/Xào) + 1 Món Canh/Rau + Tráng miệng (Trái cây như dưa hấu, chuối...).
+  2. Hạn chế gợi ý bún/phở nấu tại nhà vì cầu kỳ, trừ khi user yêu cầu.
+  3. Đặt tên món theo kiểu: "Cơm [Món Mặn] & [Món Canh]".
+  
+  Trả về JSON chi tiết.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -142,13 +148,22 @@ export const getDishesFromIngredients = async (profile: UserProfile, ingredients
   }
 };
 
-export const generateDailyPlan = async (profile: UserProfile) => {
+export const generateDailyPlan = async (profile: UserProfile, customCalories?: number, customFlavors?: string[]) => {
   const ai = getAIClient();
-  const prompt = `Tạo thực đơn 3 bữa (Sáng, Trưa, Tối) hoàn chỉnh cho 1 ngày.
-  Phong cách: Miền ${profile.region}.
-  Mục tiêu: ${profile.goal}. 
-  Khẩu vị: ${profile.flavors.join(", ")}.
-  Tổng calo mục tiêu: ${profile.calorieGoal || 2000}.
+  const targetCalories = customCalories || profile.calorieGoal || 2000;
+  const targetFlavors = customFlavors && customFlavors.length > 0 ? customFlavors : profile.flavors;
+  
+  const prompt = `Tạo thực đơn 3 bữa (Sáng, Trưa, Tối) hoàn chỉnh cho 1 ngày theo phong cách người Việt miền ${profile.region}.
+  Mục tiêu sức khỏe: ${profile.goal}. 
+  Khẩu vị ưu tiên: ${targetFlavors.join(", ")}.
+  Tổng calo mục tiêu: ${targetCalories} kcal.
+
+  QUY TẮC QUAN TRỌNG:
+  1. Bữa Sáng: Người Việt thường không nấu cầu kỳ buổi sáng. Hãy gợi ý món nhanh (Bánh mì, Xôi, Trứng luộc) hoặc "Ăn ngoài" (Phở, Bún bò - đánh dấu isEatOut=true).
+  2. Bữa Trưa & Tối: Phải là Mâm cơm gồm Cơm + Món Mặn (Kho/Rim) + Món Canh/Rau + Tráng miệng trái cây. Đặt tên món là combo (VD: "Cơm Sườn rim & Canh cải").
+  3. Không gợi ý nấu Phở/Bún tại nhà cho bữa trưa/tối vì tốn thời gian.
+  4. Chia calo hợp lý: Sáng (25%), Trưa (40%), Tối (35%).
+
   Yêu cầu trả về JSON mảng 3 món ăn chi tiết.`;
 
   try {
@@ -167,6 +182,7 @@ export const generateDailyPlan = async (profile: UserProfile) => {
                 properties: {
                   name: { type: Type.STRING },
                   type: { type: Type.STRING, enum: ['Bữa sáng', 'Bữa trưa', 'Bữa tối'] },
+                  isEatOut: { type: Type.BOOLEAN },
                   description: { type: Type.STRING },
                   estimatedTime: { type: Type.STRING },
                   difficulty: { type: Type.STRING },
@@ -186,7 +202,7 @@ export const generateDailyPlan = async (profile: UserProfile) => {
                   hackTip: { type: Type.STRING },
                   recipeSteps: { type: Type.ARRAY, items: { type: Type.STRING } }
                 },
-                required: ["name", "type", "description", "calories", "hackTip"]
+                required: ["name", "type", "description", "calories", "hackTip", "isEatOut"]
               }
             }
           },
@@ -198,6 +214,32 @@ export const generateDailyPlan = async (profile: UserProfile) => {
   } catch (error) {
     console.error(error);
     return [];
+  }
+};
+
+export const analyzeHealthTrends = async (profile: UserProfile, history: HealthRecord[], recentLogs: DailyLog[]) => {
+  const ai = getAIClient();
+  const prompt = `Phân tích tình trạng sức khỏe của user tên ${profile.name} (${profile.age} tuổi, ${profile.gender}, mục tiêu ${profile.goal}).
+  
+  Dữ liệu cân nặng (gần nhất đến xa nhất):
+  ${history.slice(0, 5).map(h => `- ${h.date}: ${h.weight}kg`).join('\n')}
+
+  Dữ liệu ăn uống 3 ngày gần đây:
+  ${recentLogs.slice(0, 3).map(log => `- ${log.date}: Tổng ${log.meals.reduce((a,b) => a+b.calories, 0)} kcal`).join('\n')}
+
+  Hãy đưa ra nhận xét ngắn gọn, súc tích (dưới 100 từ) về:
+  1. Xu hướng cân nặng (Tăng/Giảm/Ổn định có đúng mục tiêu không?).
+  2. Lời khuyên dinh dưỡng cho tuần tới dựa trên thói quen ăn uống gần đây.
+  3. Giọng văn thân thiện, động viên như một bác sĩ gia đình.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+    });
+    return response.text;
+  } catch (error) {
+    return "Hiện tại tôi chưa đủ dữ liệu để phân tích chi tiết. Hãy tiếp tục ghi chép nhé!";
   }
 };
 

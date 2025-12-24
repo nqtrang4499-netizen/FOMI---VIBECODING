@@ -32,7 +32,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
   const status = getStatus();
 
   return (
-    <div className="px-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
+    <div className="px-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24">
       <section className="flex items-center gap-4">
         <div className="w-16 h-16 bg-emerald-950 rounded-[24px] flex items-center justify-center text-emerald-400 shadow-xl overflow-hidden relative border-2 border-white">
            <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${profile.name}`} alt="ảnh đại diện" className="w-full h-full object-cover" />
@@ -137,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
                     <span className="text-xs font-black text-emerald-950 uppercase">Gợi ý 1 bữa</span>
                   </button>
                   <button 
-                    onClick={() => { setShowCookOptions(false); onNavigate('select-ingredients', 'day'); }}
+                    onClick={() => { setShowCookOptions(false); onNavigate('day-plan-config'); }}
                     className="bg-white p-4 rounded-[24px] shadow-sm flex flex-col items-center text-center gap-3 active:scale-95 transition-all"
                   >
                     <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><Calendar size={20}/></div>
@@ -181,15 +181,15 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
         </button>
 
         <button 
-          onClick={() => onNavigate('history')}
+          onClick={() => onNavigate('health-tracking')}
           className="bg-white p-6 rounded-[32px] border border-emerald-50 flex flex-col gap-5 shadow-sm hover:shadow-md transition-all active:scale-95"
         >
           <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
-             <History size={24} />
+             <Activity size={24} />
           </div>
           <div className="text-left space-y-0.5">
-             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Xem lại</span>
-             <p className="text-sm font-black text-emerald-950">Nhật ký</p>
+             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sức khỏe</span>
+             <p className="text-sm font-black text-emerald-950">Theo dõi</p>
           </div>
         </button>
       </section>
