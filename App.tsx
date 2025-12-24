@@ -31,14 +31,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('fomi_profile');
-    const savedAuth = localStorage.getItem('fomi_auth');
+    // Removed auto-login logic to ensure app starts in unlogged state
+    // const savedAuth = localStorage.getItem('fomi_auth');
     const savedCart = localStorage.getItem('fomi_shopping_cart');
     const savedLog = localStorage.getItem('fomi_daily_log');
     const savedSuggestions = localStorage.getItem('fomi_last_suggestions');
     const savedCooking = localStorage.getItem('fomi_active_cooking');
     const savedIngs = localStorage.getItem('fomi_last_ings');
     
-    if (savedAuth) setIsLoggedIn(true);
+    // if (savedAuth) setIsLoggedIn(true); 
     if (savedProfile) setUserProfile(JSON.parse(savedProfile));
     if (savedCart) setShoppingCart(JSON.parse(savedCart));
     if (savedSuggestions) setAiSuggestions(JSON.parse(savedSuggestions));
@@ -197,7 +198,7 @@ const App: React.FC = () => {
       showBack={currentView !== 'home' && currentView !== 'enjoy-meal'} 
       onBack={handleBack}
     >
-      <div key={currentView} className="view-transition-enter h-full">
+      <div key={currentView} className="view-transition-enter h-full overflow-y-auto">
         {currentView === 'home' && (
           <Dashboard 
             profile={userProfile} 
