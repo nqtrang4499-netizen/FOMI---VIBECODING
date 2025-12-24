@@ -48,25 +48,61 @@ export const recognizeIngredientsFromPhoto = async (base64Image: string) => {
 
 export const getMarketDetails = async (ingredients: string[], latitude?: number, longitude?: number) => {
   const ai = getAIClient();
-  const prompt = `Tôi cần mua: ${ingredients.join(", ")}. Tìm nơi bán gần nhất, ước tính giá VNĐ và thời gian nhận hàng.`;
+  // Prompt yêu cầu trả về JSON chi tiết giá và địa điểm
+  const prompt = `Với danh sách cần mua: ${ingredients.join(", ")}.
+  Vị trí người dùng: Latitude ${latitude}, Longitude ${longitude} (Nếu có).
+  
+  Nhiệm vụ:
+  1. Ước lượng giá trung bình (VNĐ) cho 1 phần ăn/1 đơn vị của TỪNG món trong danh sách tại thị trường Việt Nam hiện nay.
+  2. Tìm 3-4 địa điểm mua sắm phù hợp nhất (Siêu thị/Chợ) gần vị trí đó (hoặc gợi ý chung nếu không có toạ độ).
+  3. Đưa ra lời khuyên ngắn gọn cách chọn đồ tươi ngon.
+
+  Trả về JSON.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview", // Dùng model mới nhất để support search tốt hơn
       contents: prompt,
       config: {
         tools: [{ googleMaps: {} }, { googleSearch: {} }],
         toolConfig: {
           retrievalConfig: { latLng: latitude && longitude ? { latitude, longitude } : undefined }
+        },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            itemPrices: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING, description: "Tên nguyên liệu khớp với danh sách" },
+                  price: { type: Type.NUMBER, description: "Giá ước tính VNĐ" }
+                }
+              }
+            },
+            locations: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  address: { type: Type.STRING },
+                  type: { type: Type.STRING }
+                }
+              }
+            },
+            advice: { type: Type.STRING }
+          },
+          required: ["itemPrices", "locations", "advice"]
         }
       },
     });
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    return {
-      advice: response.text || "",
-      links: chunks.map((c: any) => ({ title: c.maps?.title || c.web?.title, uri: c.maps?.uri || c.web?.uri })).filter(l => l.uri)
-    };
+
+    return JSON.parse(response.text);
   } catch (error) {
+    console.error("Market Error", error);
     return null;
   }
 };

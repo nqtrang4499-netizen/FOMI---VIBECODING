@@ -1,10 +1,13 @@
 
 import React, { useState } from 'react';
-import { ChefHat, Mail, Apple, Smartphone, ChevronLeft } from 'lucide-react';
+import { Mail, Apple, Smartphone, ChevronLeft } from 'lucide-react';
 
 interface AuthProps {
   onLogin: (identifier: string) => void;
 }
+
+// Fomi Panda - Gấu trắng tai đen
+const MASCOT_LOGO = "https://api.dicebear.com/7.x/big-ears/svg?seed=Fomi&backgroundColor=b6e3f4&skinColor=ffffff&hairColor=000000";
 
 type AuthMethod = 'none' | 'email' | 'phone';
 
@@ -27,12 +30,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   return (
     <div className="max-w-md mx-auto min-h-screen bg-emerald-50/30 flex flex-col p-8 items-center justify-center space-y-8 animate-in fade-in duration-500">
       <div className="text-center space-y-4">
-        <div className="w-20 h-20 bg-emerald-600 rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-emerald-100">
-          <ChefHat size={40} color="white" />
+        <div className="w-28 h-28 bg-[#b6e3f4] rounded-full mx-auto flex items-center justify-center shadow-2xl relative border-4 border-white overflow-hidden">
+          <img src={MASCOT_LOGO} alt="Fomi" className="w-full h-full object-cover transform scale-125 translate-y-2" />
         </div>
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold text-emerald-900 tracking-tight">Fomi</h1>
-          <p className="text-emerald-600 font-medium italic">Khỏe hơn mỗi ngày</p>
+          <h1 className="text-4xl font-black text-emerald-950 tracking-tight">Fomi</h1>
+          <p className="text-emerald-600 font-bold italic text-sm">Khỏe hơn mỗi ngày</p>
         </div>
       </div>
 

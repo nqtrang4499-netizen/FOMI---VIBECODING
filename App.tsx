@@ -256,11 +256,8 @@ const App: React.FC = () => {
     }
   };
 
-  // Logic xác định prop onNext cho Layout
   const getNextAction = () => {
-      // Ở trang Home: return undefined để ẩn nút Next
       if (currentView === 'home') return undefined;
-
       if (currentView === 'meal-suggestions') {
           return () => setCurrentView('day-menu');
       }
@@ -278,22 +275,26 @@ const App: React.FC = () => {
       showBack={currentView !== 'home' && currentView !== 'enjoy-meal' && currentView !== 'health-tracking' && currentView !== 'shopping' && !isMenuOrCooking} 
       onBack={handleBack}
       onNext={getNextAction()}
+      hideHeader={currentView !== 'home'}
     >
-      <div key={currentView} className="view-transition-enter h-full overflow-y-auto">
+      {/* Container chính cho các View */}
+      <div key={currentView} className="flex-1 w-full h-full overflow-hidden flex flex-col relative view-transition-enter">
         {currentView === 'home' && (
-          <Dashboard 
-            profile={userProfile} 
-            dailyLog={dailyLog} 
-            onNavigate={(view, subMode) => {
-              if (view === 'resume-cooking') handleResumeCooking();
-              else {
-                 if (subMode) setPlanMode(subMode);
-                 setCurrentView(view as ViewState);
-              }
-            }}
-            hasLastSuggestions={aiSuggestions.length > 0}
-            activeCookingMeal={activeCookingMeal}
-          />
+          <div className="flex-1 overflow-y-auto pb-24">
+            <Dashboard 
+                profile={userProfile} 
+                dailyLog={dailyLog} 
+                onNavigate={(view, subMode) => {
+                if (view === 'resume-cooking') handleResumeCooking();
+                else {
+                    if (subMode) setPlanMode(subMode);
+                    setCurrentView(view as ViewState);
+                }
+                }}
+                hasLastSuggestions={aiSuggestions.length > 0}
+                activeCookingMeal={activeCookingMeal}
+            />
+          </div>
         )}
         {currentView === 'select-ingredients' && (
           <IngredientSelector 
@@ -324,6 +325,7 @@ const App: React.FC = () => {
                if (planMode === 'day') setCurrentView('day-plan-config');
                else setCurrentView('select-ingredients');
             }}
+            onFinishSelection={() => setCurrentView('day-menu')}
           />
         )}
         {currentView === 'day-menu' && (
@@ -331,6 +333,7 @@ const App: React.FC = () => {
              dailyLog={dailyLog}
              onStartProcess={startPreparingMeal}
              onRemoveMeal={removeMealById}
+             onBack={handleBack}
            />
         )}
         {currentView === 'eat-out' && (
@@ -389,8 +392,9 @@ const App: React.FC = () => {
         )}
       </div>
       
-      {/* Expanded Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-2 pb-6 z-50 shadow-2xl flex justify-around items-end">
+      {/* Expanded Bottom Navigation Bar - New Order: Home, Menu, Shopping, Health */}
+      <div className="bg-white border-t border-gray-100 p-2 pb-6 z-50 shrink-0 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] flex justify-around items-end h-[85px]">
+          {/* 1. Trang chủ */}
           <button onClick={() => setCurrentView('home')} className={`flex flex-col items-center gap-1 p-2 transition-all ${currentView === 'home' ? 'text-emerald-600 -translate-y-2' : 'text-gray-300'}`}>
               <div className={`p-2 rounded-2xl transition-all ${currentView === 'home' ? 'bg-emerald-50 shadow-lg' : 'bg-transparent'}`}>
                   <Home size={24} strokeWidth={currentView === 'home' ? 2.5 : 2} />
@@ -398,13 +402,7 @@ const App: React.FC = () => {
               <span className={`text-[9px] font-black uppercase tracking-widest ${currentView === 'home' ? 'opacity-100' : 'opacity-0'}`}>Trang chủ</span>
           </button>
 
-          <button onClick={() => setCurrentView('shopping')} className={`flex flex-col items-center gap-1 p-2 transition-all ${currentView === 'shopping' ? 'text-emerald-600 -translate-y-2' : 'text-gray-300'}`}>
-              <div className={`p-2 rounded-2xl transition-all ${currentView === 'shopping' ? 'bg-emerald-50 shadow-lg' : 'bg-transparent'}`}>
-                  <ShoppingBag size={24} strokeWidth={currentView === 'shopping' ? 2.5 : 2} />
-              </div>
-              <span className={`text-[9px] font-black uppercase tracking-widest ${currentView === 'shopping' ? 'opacity-100' : 'opacity-0'}`}>Đi chợ</span>
-          </button>
-
+          {/* 2. Thực đơn (Menu) */}
           <button onClick={() => setCurrentView('day-menu')} className={`flex flex-col items-center gap-1 p-2 transition-all ${isMenuOrCooking ? 'text-emerald-600 -translate-y-2' : 'text-gray-300'}`}>
               <div className={`p-2 rounded-2xl transition-all ${isMenuOrCooking ? 'bg-emerald-50 shadow-lg' : 'bg-transparent'}`}>
                   {activeCookingMeal ? <ChefHat size={24} strokeWidth={isMenuOrCooking ? 2.5 : 2} /> : <Utensils size={24} strokeWidth={isMenuOrCooking ? 2.5 : 2} />}
@@ -412,6 +410,15 @@ const App: React.FC = () => {
               <span className={`text-[9px] font-black uppercase tracking-widest ${isMenuOrCooking ? 'opacity-100' : 'opacity-0'}`}>{activeCookingMeal ? 'Đang nấu' : 'Thực đơn'}</span>
           </button>
 
+          {/* 3. Đi chợ (Shopping) */}
+          <button onClick={() => setCurrentView('shopping')} className={`flex flex-col items-center gap-1 p-2 transition-all ${currentView === 'shopping' ? 'text-emerald-600 -translate-y-2' : 'text-gray-300'}`}>
+              <div className={`p-2 rounded-2xl transition-all ${currentView === 'shopping' ? 'bg-emerald-50 shadow-lg' : 'bg-transparent'}`}>
+                  <ShoppingBag size={24} strokeWidth={currentView === 'shopping' ? 2.5 : 2} />
+              </div>
+              <span className={`text-[9px] font-black uppercase tracking-widest ${currentView === 'shopping' ? 'opacity-100' : 'opacity-0'}`}>Đi chợ</span>
+          </button>
+
+          {/* 4. Sức khỏe (Health) */}
           <button onClick={() => setCurrentView('health-tracking')} className={`flex flex-col items-center gap-1 p-2 transition-all ${currentView === 'health-tracking' ? 'text-emerald-600 -translate-y-2' : 'text-gray-300'}`}>
               <div className={`p-2 rounded-2xl transition-all ${currentView === 'health-tracking' ? 'bg-emerald-50 shadow-lg' : 'bg-transparent'}`}>
                   <Activity size={24} strokeWidth={currentView === 'health-tracking' ? 2.5 : 2} />

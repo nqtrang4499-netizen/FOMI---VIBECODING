@@ -3,161 +3,193 @@ import React, { useState } from 'react';
 import { DailyLog, Meal } from '../types';
 import { 
   Utensils, Store, Clock, Flame, ChevronRight, X, 
-  ChefHat, CheckCircle, AlertCircle, ShoppingCart, Play, Camera, Info
+  ChefHat, CheckCircle, AlertCircle, ShoppingCart, Play, Camera, ArrowRight, Check
 } from 'lucide-react';
 
 interface DayMenuViewProps {
   dailyLog: DailyLog;
   onStartProcess: (meal: Meal, shouldGoShopping: boolean) => void;
   onRemoveMeal: (id: string) => void;
+  onBack: () => void;
 }
 
-const DayMenuView: React.FC<DayMenuViewProps> = ({ dailyLog, onStartProcess, onRemoveMeal }) => {
+const DayMenuView: React.FC<DayMenuViewProps> = ({ dailyLog, onStartProcess, onRemoveMeal, onBack }) => {
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
+
+  // Logic xác định món tiếp theo
+  // Ưu tiên món chưa nấu và không phải ăn ngoài (để nấu), hoặc món ăn ngoài chưa check-in
+  // Ở đây giả định user nấu theo thứ tự bữa
+  const nextMeal = dailyLog.meals.find(m => !m.isEatOut) || dailyLog.meals[0];
+  const missingIngredientsCount = dailyLog.meals.reduce((acc, m) => acc + (m.ingredientsMissing?.length || 0), 0);
 
   const handleStart = (meal: Meal) => {
     const hasMissing = meal.ingredientsMissing && meal.ingredientsMissing.length > 0;
-    onStartProcess(meal, !!hasMissing); // Cast to boolean just in case
+    onStartProcess(meal, !!hasMissing); 
     setSelectedMeal(null);
   };
 
+  const handleNextAction = () => {
+      if (nextMeal) handleStart(nextMeal);
+  };
+
   return (
-    <div className="px-6 py-4 space-y-6 animate-in slide-in-from-right duration-500 pb-28">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold text-emerald-950">Thực đơn hôm nay</h2>
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-           {dailyLog.meals.length} món ăn đã được lên kế hoạch
-        </p>
+    <div className="flex flex-col h-full bg-gray-50/50">
+      {/* Page Title Area */}
+      <div className="px-5 py-4 shrink-0">
+         <h2 className="text-xl font-black text-emerald-950">Thực đơn hôm nay</h2>
+         <p className="text-xs font-medium text-gray-400 mt-1 flex items-center gap-2">
+            <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-bold">{dailyLog.meals.length} món</span>
+            <span>•</span>
+            <span>{dailyLog.meals.reduce((a,b)=>a+b.calories,0)} Kcal</span>
+         </p>
       </div>
 
-      <div className="space-y-4">
+      {/* Meal Timeline List */}
+      <div className="flex-1 overflow-y-auto px-4 pb-32 space-y-3">
         {dailyLog.meals.length === 0 ? (
-           <div className="text-center py-10 opacity-50">
-              <p>Chưa có món nào được chọn.</p>
+           <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed border-gray-200 rounded-2xl mx-2 bg-white/50">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                 <Utensils size={20} className="text-gray-300" />
+              </div>
+              <p className="font-bold text-gray-400 text-xs">Chưa có món nào.</p>
+              <button onClick={onBack} className="mt-3 text-emerald-600 text-xs font-bold hover:underline">Thêm món ngay</button>
            </div>
         ) : (
-          dailyLog.meals.map((meal) => (
+          dailyLog.meals.map((meal, index) => (
              <div 
                key={meal.id}
                onClick={() => setSelectedMeal(meal)}
-               className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4 active:scale-95 transition-all cursor-pointer hover:border-emerald-200"
+               className="group bg-white p-3 rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex items-center gap-3 active:scale-[0.99] transition-all hover:border-emerald-200 cursor-pointer"
              >
-                <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 relative">
-                   <img src={`https://source.unsplash.com/200x200/?food,dish,${meal.name}`} className="w-full h-full object-cover" alt="" />
+                {/* Image / Icon */}
+                <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative bg-gray-100">
+                   <img src={`https://source.unsplash.com/150x150/?food,dish,${meal.name}`} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" alt="" />
                    {meal.isEatOut && (
                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Store size={20} className="text-white" />
+                        <Store size={16} className="text-white" />
                      </div>
                    )}
                 </div>
-                <div className="flex-1 space-y-1">
-                   <div className="flex items-center gap-2">
-                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${meal.isEatOut ? 'text-orange-600 bg-orange-50' : 'text-emerald-600 bg-emerald-50'}`}>
-                        {meal.isEatOut ? 'Ăn ngoài' : meal.type}
-                      </span>
+                
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                   <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{meal.type}</span>
+                      {meal.ingredientsMissing && meal.ingredientsMissing.length > 0 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      )}
                    </div>
-                   <h4 className="font-bold text-emerald-950 leading-tight line-clamp-1">{meal.name}</h4>
-                   <div className="flex gap-3 text-xs text-gray-400 font-bold">
-                      <span className="flex items-center gap-1"><Flame size={12}/> {meal.calories}</span>
-                      <span className="flex items-center gap-1"><Clock size={12}/> {meal.estimatedTime || 'N/A'}</span>
+                   <h4 className="font-extrabold text-emerald-950 text-sm leading-tight truncate">{meal.name}</h4>
+                   <div className="flex items-center gap-3 mt-1.5">
+                      <span className="text-[10px] font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded flex items-center gap-1">
+                         <Flame size={10} className="text-orange-400"/> {meal.calories}
+                      </span>
+                      {!meal.isEatOut && (
+                        <span className="text-[10px] font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <Clock size={10} className="text-blue-400"/> {meal.estimatedTime || '30p'}
+                        </span>
+                      )}
                    </div>
                 </div>
-                <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
-                   <ChevronRight size={18} />
+
+                {/* Arrow */}
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                   <ChevronRight size={16} />
                 </div>
              </div>
           ))
         )}
       </div>
 
-      {/* Detail Modal for Execution */}
+      {/* Bottom Action Bar (Next Step) - Fixed */}
+      {dailyLog.meals.length > 0 && nextMeal && (
+          <div className="fixed bottom-0 left-0 right-0 p-4 z-30 max-w-[390px] mx-auto bg-gradient-to-t from-white via-white to-transparent pt-10">
+             <div className="bg-emerald-950 rounded-2xl p-4 shadow-xl shadow-emerald-900/10 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                   <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5">Tiếp theo</p>
+                   <p className="text-white font-bold text-sm truncate">{nextMeal.name}</p>
+                </div>
+                <button 
+                   onClick={handleNextAction}
+                   className="shrink-0 bg-white text-emerald-950 px-5 py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
+                >
+                   {missingIngredientsCount > 0 ? 'Đi chợ' : 'Nấu ngay'} <ArrowRight size={14} />
+                </button>
+             </div>
+          </div>
+      )}
+
+      {/* Detail Modal - Clean & Slim */}
       {selectedMeal && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center animate-in fade-in">
-          <div className="absolute inset-0 bg-emerald-950/60 backdrop-blur-sm" onClick={() => setSelectedMeal(null)} />
-          <div className="bg-white w-full max-w-md rounded-t-[40px] relative z-10 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-full duration-500">
-            <div className="sticky top-0 bg-white/80 backdrop-blur-md p-6 flex justify-between items-center border-b border-gray-50">
-               <h3 className="text-xl font-extrabold text-emerald-950">
-                 {selectedMeal.isEatOut ? 'Thông tin món ăn' : 'Chuẩn bị nấu'}
-               </h3>
-               <button onClick={() => setSelectedMeal(null)} className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400">
-                  <X size={20} />
+        <div className="fixed inset-0 z-[100] flex items-end justify-center animate-in fade-in max-w-[390px] mx-auto">
+          <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-[2px]" onClick={() => setSelectedMeal(null)} />
+          
+          <div className="bg-white w-full rounded-t-[28px] relative z-10 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl">
+            {/* Header Modal */}
+            <div className="shrink-0 px-5 py-4 flex justify-between items-center border-b border-gray-50">
+               <h3 className="text-sm font-extrabold text-emerald-950 uppercase tracking-wide">Chi tiết món ăn</h3>
+               <button onClick={() => setSelectedMeal(null)} className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">
+                  <X size={16} />
                </button>
             </div>
 
-            <div className="p-8 space-y-8">
-               <div className="text-center space-y-2">
-                  <div className="w-24 h-24 rounded-[32px] overflow-hidden mx-auto shadow-lg mb-4">
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+               {/* Hero */}
+               <div className="flex gap-4">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-sm shrink-0 bg-gray-100">
                      <img src={`https://source.unsplash.com/300x300/?food,dish,${selectedMeal.name}`} className="w-full h-full object-cover" alt="" />
                   </div>
-                  <h4 className="text-2xl font-black text-emerald-950">{selectedMeal.name}</h4>
-                  <p className="text-sm font-medium text-gray-500">{selectedMeal.description}</p>
+                  <div className="flex-1 py-1">
+                     <h4 className="text-lg font-black text-emerald-950 leading-tight mb-2">{selectedMeal.name}</h4>
+                     <div className="flex flex-wrap gap-2">
+                        <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-lg">
+                           {selectedMeal.calories} Kcal
+                        </span>
+                        <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-lg">
+                           {selectedMeal.type}
+                        </span>
+                     </div>
+                  </div>
                </div>
 
-               {selectedMeal.isEatOut ? (
-                 // Giao diện cho món Ăn ngoài
-                 <div className="space-y-6">
-                    <div className="bg-orange-50 p-6 rounded-[24px] border border-orange-100 space-y-3">
-                       <div className="flex items-center gap-2 text-orange-600 font-black text-xs uppercase tracking-widest">
-                          <Info size={16} /> Lưu ý từ Fomi
-                       </div>
-                       <p className="text-sm text-emerald-900 font-medium leading-relaxed">
-                          Bạn không bắt buộc phải ăn đúng món này. Nếu ra quán và đổi ý muốn ăn món khác, hãy cứ nhấn <b>Check-in</b> và chụp lại món mới. Fomi sẽ tự động nhận diện và cập nhật lại thực đơn cho bạn.
-                       </p>
+               {/* Description */}
+               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                     {selectedMeal.description}
+                  </p>
+               </div>
+
+               {/* Ingredients */}
+               {!selectedMeal.isEatOut && (
+                 <div className="space-y-3">
+                    <h5 className="text-[11px] font-extrabold text-gray-900 uppercase tracking-wide flex items-center gap-2">
+                       <Utensils size={12} className="text-emerald-600"/> Nguyên liệu
+                    </h5>
+                    <div className="flex flex-wrap gap-2">
+                       {selectedMeal.ingredientsFound?.map(ing => (
+                          <span key={ing} className="px-2.5 py-1.5 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded-lg border border-emerald-100 flex items-center gap-1.5">
+                             <Check size={10} /> {ing}
+                          </span>
+                       ))}
+                       {selectedMeal.ingredientsMissing?.map((ing: any) => (
+                          <span key={ing.name || ing} className="px-2.5 py-1.5 bg-white text-gray-400 text-[10px] font-bold rounded-lg border border-gray-200 flex items-center gap-1.5 line-through">
+                             {typeof ing === 'string' ? ing : ing.name}
+                          </span>
+                       ))}
                     </div>
                  </div>
-               ) : (
-                 // Giao diện cho món Tự nấu
-                 <>
-                   <div className="space-y-4">
-                      <h5 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Nguyên liệu cần thiết</h5>
-                      <div className="space-y-2">
-                         {selectedMeal.ingredientsFound?.map(ing => (
-                            <div key={ing} className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                               <CheckCircle size={16} className="text-emerald-500" />
-                               <span className="text-sm font-bold text-emerald-900">{ing}</span>
-                            </div>
-                         ))}
-                         {selectedMeal.ingredientsMissing?.map((ing: any) => (
-                            <div key={ing.name || ing} className="flex items-center gap-3 p-3 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                               <AlertCircle size={16} className="text-orange-500" />
-                               <span className="text-sm font-bold text-orange-900">{typeof ing === 'string' ? ing : ing.name}</span>
-                               <span className="ml-auto text-[10px] font-black text-orange-400 uppercase tracking-widest">Thiếu</span>
-                            </div>
-                         ))}
-                      </div>
-                   </div>
-
-                   <div className="space-y-4">
-                      <h5 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Cách làm</h5>
-                      <div className="bg-gray-50 p-6 rounded-3xl space-y-4">
-                         {selectedMeal.recipeSteps?.map((step, idx) => (
-                            <div key={idx} className="flex gap-3">
-                               <span className="w-6 h-6 bg-emerald-200 text-emerald-800 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0">{idx+1}</span>
-                               <p className="text-sm text-gray-600 font-medium">{step}</p>
-                            </div>
-                         ))}
-                      </div>
-                   </div>
-                 </>
                )}
+            </div>
 
-               {/* Action Button */}
-               <div className="pt-4 sticky bottom-0 bg-white pb-8">
-                  <button 
-                    onClick={() => handleStart(selectedMeal)}
-                    className="w-full py-5 bg-emerald-600 text-white font-extrabold rounded-2xl flex items-center justify-center gap-3 shadow-2xl shadow-emerald-200 active:scale-95 transition-all text-sm uppercase tracking-wider"
-                  >
-                     {selectedMeal.isEatOut ? (
-                        <>Check-in ngay <Camera size={20} /></>
-                     ) : (
-                        selectedMeal.ingredientsMissing && selectedMeal.ingredientsMissing.length > 0 ? (
-                           <>Đi chợ & Nấu <ShoppingCart size={20} /></>
-                        ) : (
-                           <>Bắt đầu nấu ngay <Play size={20} /></>
-                        )
-                     )}
-                  </button>
-               </div>
+            {/* Action Footer */}
+            <div className="shrink-0 p-5 border-t border-gray-50 bg-white pb-8">
+               <button 
+                  onClick={() => handleStart(selectedMeal)}
+                  className="w-full py-4 bg-emerald-600 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 active:scale-95 transition-all text-xs uppercase tracking-wider"
+               >
+                  {selectedMeal.isEatOut ? 'Check-in món này' : 'Bắt đầu chế biến'}
+               </button>
             </div>
           </div>
         </div>

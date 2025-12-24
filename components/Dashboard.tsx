@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { UserProfile, DailyLog, Meal } from '../types';
 import { 
-  Flame, Plus, Smile, Activity, Camera, 
-  ShoppingBag, History, Sparkles, ChefHat, ChevronRight, Wind, Play,
-  Calendar, Zap, TrendingDown, TrendingUp, Utensils, Store
+  Plus, Activity, ShoppingBag, ChefHat, ChevronRight, Play,
+  Calendar, Zap, Utensils, Store
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -15,6 +14,9 @@ interface DashboardProps {
   activeCookingMeal?: Meal | null;
 }
 
+// Fomi Panda
+const MASCOT_HELLO = "https://api.dicebear.com/7.x/big-ears/svg?seed=Fomi&backgroundColor=b6e3f4&skinColor=ffffff&hairColor=000000";
+
 const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, hasLastSuggestions, activeCookingMeal }) => {
   const [showCookOptions, setShowCookOptions] = useState(false);
   const caloriesConsumed = dailyLog.meals.reduce((acc, m) => acc + m.calories, 0);
@@ -23,175 +25,148 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
   const progressPercent = Math.min((caloriesConsumed / calorieGoal) * 100, 100);
 
   const getStatus = () => {
-    if (progressPercent < 40) return { label: 'Cần bổ sung thêm', color: 'text-blue-600', bg: 'bg-blue-50', bar: 'bg-blue-500', trend: <TrendingUp size={14}/> };
-    if (progressPercent < 90) return { label: 'Duy trì rất tốt', color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 'bg-emerald-500', trend: <TrendingUp size={14}/> };
-    if (progressPercent <= 100) return { label: 'Đã đạt mục tiêu', color: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-500', trend: <Activity size={14}/> };
-    return { label: 'Vượt mức cho phép', color: 'text-red-600', bg: 'bg-red-50', bar: 'bg-red-500', trend: <TrendingDown size={14}/> };
+    if (progressPercent < 40) return { label: 'Cần nạp', color: 'text-blue-600', bar: 'bg-blue-500' };
+    if (progressPercent < 90) return { label: 'Tốt', color: 'text-emerald-600', bar: 'bg-emerald-500' };
+    if (progressPercent <= 100) return { label: 'Đủ', color: 'text-orange-600', bar: 'bg-orange-500' };
+    return { label: 'Vượt', color: 'text-red-600', bar: 'bg-red-500' };
   };
 
   const status = getStatus();
 
   return (
-    <div className="px-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-24">
-      <section className="flex items-center gap-4">
-        <div className="w-16 h-16 bg-emerald-950 rounded-[24px] flex items-center justify-center text-emerald-400 shadow-xl overflow-hidden relative border-2 border-white">
-           <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${profile.name}`} alt="ảnh đại diện" className="w-full h-full object-cover" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-black text-emerald-950 leading-none">Chào {profile.name.split(' ').pop()}!</h2>
-          <div className="flex items-center gap-1.5 mt-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest">
-             <Calendar size={12} /> {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
+    <div className="px-5 pt-4 pb-24 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      
+      {/* 1. Mascot Greeting Header - Fomi Panda */}
+      <section className="flex items-center justify-between bg-[#e0f4fc] p-4 rounded-3xl border border-blue-100">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md relative group">
+             <img src={MASCOT_HELLO} alt="Fomi" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform scale-125 translate-y-1" />
+             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+          </div>
+          <div>
+            <h2 className="text-base font-black text-emerald-950">Chào bạn, {profile.name.split(' ').pop()}!</h2>
+            <p className="text-xs font-medium text-gray-500 mt-0.5 flex items-center gap-1">
+               Gấu béo Fomi đã sẵn sàng hỗ trợ
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="bg-white rounded-[40px] p-8 shadow-xl shadow-emerald-900/5 border border-emerald-50 relative overflow-hidden group">
-         <div className="relative z-10 flex flex-col gap-6">
-            <div className="flex justify-between items-start">
-               <div className="space-y-1">
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Năng lượng mục tiêu</h4>
-                  <div className="flex items-baseline gap-2">
-                     <span className="text-4xl font-black text-emerald-950">{remaining > 0 ? remaining : 0}</span>
-                     <span className="text-sm font-extrabold text-gray-400">Calo còn lại</span>
-                  </div>
-               </div>
-               <div className={`w-12 h-12 ${status.bg} rounded-2xl flex items-center justify-center ${status.color} shadow-inner`}>
-                  <Zap size={24} fill="currentColor" />
-               </div>
+      {/* 2. Slim Energy Bar */}
+      <section className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-50 flex items-center gap-4">
+         <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 shrink-0">
+            <Zap size={18} fill="currentColor" />
+         </div>
+         <div className="flex-1 space-y-1.5">
+            <div className="flex justify-between items-end">
+               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Calo hôm nay</span>
+               <span className="text-xs font-black text-emerald-950">{remaining} <span className="text-[9px] text-gray-400 font-bold">kcal còn lại</span></span>
             </div>
-
-            <div className="space-y-3">
-               <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-wider">
-                  <span className={status.color}>{status.label}</span>
-                  <span className="text-gray-400">{Math.round(progressPercent)}%</span>
-               </div>
-               <div className="h-3 w-full bg-gray-50 rounded-full overflow-hidden border border-gray-100 shadow-inner">
-                  <div className={`h-full ${status.bar} transition-all duration-1000 ease-out relative`} style={{ width: `${progressPercent}%` }}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-pulse" />
-                  </div>
-               </div>
-            </div>
-
-            <div className="flex gap-4 pt-2 border-t border-gray-50">
-               <div className="flex-1 text-center">
-                  <p className="text-[9px] font-black text-gray-400 uppercase">Đã ăn</p>
-                  <p className="text-sm font-black text-emerald-900">{caloriesConsumed} <span className="text-[9px] opacity-40 uppercase">Calo</span></p>
-               </div>
-               <div className="w-[1px] bg-gray-50" />
-               <div className="flex-1 text-center">
-                  <p className="text-[9px] font-black text-gray-400 uppercase">Hạn mức</p>
-                  <p className="text-sm font-black text-emerald-900">{calorieGoal} <span className="text-[9px] opacity-40 uppercase">Calo</span></p>
-               </div>
+            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+               <div className={`h-full ${status.bar} rounded-full transition-all duration-1000`} style={{ width: `${progressPercent}%` }} />
             </div>
          </div>
       </section>
 
-      <section className="space-y-4">
-        {activeCookingMeal ? (
-          <div 
-            onClick={() => onNavigate('resume-cooking')}
-            className="bg-emerald-950 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden cursor-pointer active:scale-95 transition-all group"
-          >
-            <div className="relative z-10 flex flex-col gap-5">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                   <Play size={24} fill="white" className="ml-1" />
-                </div>
-                <div>
-                   <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest">Đang dở dang</p>
-                   <h3 className="text-xl font-black mt-1 line-clamp-1">{activeCookingMeal.name}</h3>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-black text-emerald-500 uppercase">
-                 Quay lại nấu ăn ngay <ChevronRight size={16} />
-              </div>
-            </div>
-            <ChefHat size={120} className="absolute -right-6 -bottom-6 text-emerald-900/40 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
+      {/* 3. Active Cooking State (If any) */}
+      {activeCookingMeal && (
+        <section 
+          onClick={() => onNavigate('resume-cooking')}
+          className="bg-emerald-900 rounded-2xl p-4 text-white shadow-lg shadow-emerald-900/20 relative overflow-hidden cursor-pointer active:scale-95 transition-all flex items-center gap-4"
+        >
+          <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0 shadow-inner">
+             <Play size={18} fill="white" />
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            <div className={`col-span-2 transition-all duration-300 ${showCookOptions ? 'bg-emerald-50 ring-2 ring-emerald-500' : 'bg-emerald-600'} rounded-[32px] p-1`}>
-              {!showCookOptions ? (
-                <div 
+          <div className="flex-1 min-w-0">
+             <p className="text-emerald-400 text-[9px] font-black uppercase tracking-widest">Đang nấu dở</p>
+             <h3 className="text-sm font-bold truncate">{activeCookingMeal.name}</h3>
+          </div>
+          <ChevronRight size={18} className="text-emerald-500" />
+        </section>
+      )}
+
+      {/* 4. Main Action Grid (2x2 Balanced) */}
+      <section className="grid grid-cols-2 gap-3">
+         {/* Action 1: Cook (Expandable) */}
+         <div className={`col-span-2 transition-all duration-300 ${showCookOptions ? 'bg-gray-50 ring-1 ring-gray-200' : 'bg-white border border-gray-100'} rounded-2xl shadow-sm`}>
+            {!showCookOptions ? (
+               <div 
                   onClick={() => setShowCookOptions(true)}
-                  className="p-7 text-white shadow-2xl shadow-emerald-200 relative overflow-hidden cursor-pointer active:scale-95 transition-all group flex flex-col gap-6"
-                >
-                  <div className="relative z-10 flex flex-col gap-6">
-                    <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl group-hover:rotate-12 transition-transform">
-                      <ChefHat size={32} />
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-2xl font-black leading-tight uppercase tracking-tight">Tự nấu ăn</h3>
-                      <p className="text-emerald-100/70 text-xs font-bold mt-1 uppercase tracking-widest">Gợi ý thông minh</p>
-                    </div>
+                  className="p-4 flex items-center gap-4 cursor-pointer active:bg-gray-50 rounded-2xl transition-colors"
+               >
+                  <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                     <ChefHat size={22} />
                   </div>
-                  <Sparkles size={140} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 group-hover:scale-110 transition-transform duration-1000" />
-                </div>
-              ) : (
-                <div className="p-4 grid grid-cols-2 gap-3 animate-in fade-in zoom-in">
+                  <div className="flex-1">
+                     <h3 className="text-sm font-extrabold text-emerald-950">Gợi ý món ăn</h3>
+                     <p className="text-[10px] font-bold text-gray-400 mt-0.5">Fomi thiết kế thực đơn</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300">
+                     <Plus size={16} />
+                  </div>
+               </div>
+            ) : (
+               <div className="p-2 grid grid-cols-2 gap-2 animate-in fade-in zoom-in duration-200">
                   <button 
                     onClick={() => { setShowCookOptions(false); onNavigate('select-ingredients', 'single'); }}
-                    className="bg-white p-4 rounded-[24px] shadow-sm flex flex-col items-center text-center gap-3 active:scale-95 transition-all"
+                    className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-all hover:border-emerald-200"
                   >
-                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><Utensils size={20}/></div>
-                    <span className="text-xs font-black text-emerald-950 uppercase">Gợi ý 1 bữa</span>
+                     <Utensils size={18} className="text-emerald-600"/>
+                     <span className="text-[10px] font-bold text-gray-600">1 bữa ăn</span>
                   </button>
                   <button 
                     onClick={() => { setShowCookOptions(false); onNavigate('day-plan-config'); }}
-                    className="bg-white p-4 rounded-[24px] shadow-sm flex flex-col items-center text-center gap-3 active:scale-95 transition-all"
+                    className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center gap-1 active:scale-95 transition-all hover:border-emerald-200"
                   >
-                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><Calendar size={20}/></div>
-                    <span className="text-xs font-black text-emerald-950 uppercase">Thực đơn ngày</span>
+                     <Calendar size={18} className="text-emerald-600"/>
+                     <span className="text-[10px] font-bold text-gray-600">Cả ngày</span>
                   </button>
-                  <button onClick={() => setShowCookOptions(false)} className="col-span-2 text-center text-xs text-gray-400 font-bold py-2">Đóng lại</button>
-                </div>
-              )}
-            </div>
+               </div>
+            )}
+         </div>
 
-            <button 
-              onClick={() => onNavigate('eat-out')}
-              className="bg-white p-6 rounded-[32px] border border-orange-100 flex flex-col gap-5 shadow-sm hover:shadow-md transition-all active:scale-95 col-span-2"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shadow-inner">
-                  <Store size={28} />
-                </div>
-                <div className="text-left space-y-1">
-                  <p className="text-lg font-black text-emerald-950 uppercase">Ăn bên ngoài</p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nhập món / Chụp ảnh</p>
-                </div>
-              </div>
-            </button>
-          </div>
-        )}
+         {/* Action 2: Eat Out */}
+         <button 
+            onClick={() => onNavigate('eat-out')}
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2 active:scale-95 transition-all hover:border-orange-200 group"
+         >
+            <div className="w-9 h-9 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+               <Store size={18} />
+            </div>
+            <div className="text-left">
+               <span className="text-xs font-bold text-emerald-950">Ăn ngoài</span>
+            </div>
+         </button>
+
+         {/* Action 3: Shopping */}
+         <button 
+            onClick={() => onNavigate('shopping')}
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2 active:scale-95 transition-all hover:border-blue-200 group"
+         >
+            <div className="w-9 h-9 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+               <ShoppingBag size={18} />
+            </div>
+            <div className="text-left">
+               <span className="text-xs font-bold text-emerald-950">Đi chợ</span>
+            </div>
+         </button>
       </section>
 
-      <section className="grid grid-cols-2 gap-4">
-        <button 
-          onClick={() => onNavigate('shopping')}
-          className="bg-white p-6 rounded-[32px] border border-emerald-50 flex flex-col gap-5 shadow-sm hover:shadow-md transition-all active:scale-95"
-        >
-          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner">
-             <ShoppingBag size={24} />
-          </div>
-          <div className="text-left space-y-0.5">
-             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Đi mua đồ</span>
-             <p className="text-sm font-black text-emerald-950">Sổ đi chợ</p>
-          </div>
-        </button>
-
-        <button 
-          onClick={() => onNavigate('health-tracking')}
-          className="bg-white p-6 rounded-[32px] border border-emerald-50 flex flex-col gap-5 shadow-sm hover:shadow-md transition-all active:scale-95"
-        >
-          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
-             <Activity size={24} />
-          </div>
-          <div className="text-left space-y-0.5">
-             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sức khỏe</span>
-             <p className="text-sm font-black text-emerald-950">Theo dõi</p>
-          </div>
-        </button>
+      {/* 5. Health Quick View */}
+      <section 
+         onClick={() => onNavigate('health-tracking')}
+         className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all"
+      >
+         <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-purple-50 text-purple-500 rounded-lg flex items-center justify-center">
+               <Activity size={18} />
+            </div>
+            <div>
+               <h3 className="text-xs font-bold text-emerald-950">Theo dõi sức khỏe</h3>
+               <p className="text-[10px] font-medium text-gray-400 mt-0.5">Cân nặng & BMI</p>
+            </div>
+         </div>
+         <ChevronRight size={16} className="text-gray-300" />
       </section>
     </div>
   );
