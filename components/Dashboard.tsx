@@ -1,21 +1,22 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { UserProfile, DailyLog, Meal } from '../types';
 import { 
   Flame, Plus, Smile, Activity, Camera, 
   ShoppingBag, History, Sparkles, ChefHat, ChevronRight, Wind, Play,
-  Calendar, Zap, TrendingDown, TrendingUp
+  Calendar, Zap, TrendingDown, TrendingUp, Utensils, Store
 } from 'lucide-react';
 
 interface DashboardProps {
   profile: UserProfile;
   dailyLog: DailyLog;
-  onNavigate: (view: string) => void;
+  onNavigate: (view: string, subMode?: 'single' | 'day') => void;
   hasLastSuggestions: boolean;
   activeCookingMeal?: Meal | null;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, hasLastSuggestions, activeCookingMeal }) => {
+  const [showCookOptions, setShowCookOptions] = useState(false);
   const caloriesConsumed = dailyLog.meals.reduce((acc, m) => acc + m.calories, 0);
   const calorieGoal = profile.calorieGoal || 2000;
   const remaining = calorieGoal - caloriesConsumed;
@@ -108,20 +109,59 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
             <ChefHat size={120} className="absolute -right-6 -bottom-6 text-emerald-900/40 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
           </div>
         ) : (
-          <div 
-            onClick={() => onNavigate('select-ingredients')}
-            className="bg-emerald-600 rounded-[32px] p-8 text-white shadow-2xl shadow-emerald-200 relative overflow-hidden cursor-pointer active:scale-95 transition-all group"
-          >
-            <div className="relative z-10 flex flex-col gap-6">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl group-hover:rotate-12 transition-transform">
-                 <Plus size={32} />
-              </div>
-              <div className="space-y-1">
-                 <h3 className="text-2xl font-black leading-tight uppercase tracking-tight">Gợi ý bữa ăn<br/>cho hôm nay</h3>
-                 <p className="text-emerald-100/70 text-xs font-bold mt-1 uppercase tracking-widest">Thông minh & Lành mạnh</p>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className={`col-span-2 transition-all duration-300 ${showCookOptions ? 'bg-emerald-50 ring-2 ring-emerald-500' : 'bg-emerald-600'} rounded-[32px] p-1`}>
+              {!showCookOptions ? (
+                <div 
+                  onClick={() => setShowCookOptions(true)}
+                  className="p-7 text-white shadow-2xl shadow-emerald-200 relative overflow-hidden cursor-pointer active:scale-95 transition-all group flex flex-col gap-6"
+                >
+                  <div className="relative z-10 flex flex-col gap-6">
+                    <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl group-hover:rotate-12 transition-transform">
+                      <ChefHat size={32} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-black leading-tight uppercase tracking-tight">Tự nấu ăn</h3>
+                      <p className="text-emerald-100/70 text-xs font-bold mt-1 uppercase tracking-widest">Gợi ý thông minh</p>
+                    </div>
+                  </div>
+                  <Sparkles size={140} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 group-hover:scale-110 transition-transform duration-1000" />
+                </div>
+              ) : (
+                <div className="p-4 grid grid-cols-2 gap-3 animate-in fade-in zoom-in">
+                  <button 
+                    onClick={() => { setShowCookOptions(false); onNavigate('select-ingredients', 'single'); }}
+                    className="bg-white p-4 rounded-[24px] shadow-sm flex flex-col items-center text-center gap-3 active:scale-95 transition-all"
+                  >
+                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><Utensils size={20}/></div>
+                    <span className="text-xs font-black text-emerald-950 uppercase">Gợi ý 1 bữa</span>
+                  </button>
+                  <button 
+                    onClick={() => { setShowCookOptions(false); onNavigate('select-ingredients', 'day'); }}
+                    className="bg-white p-4 rounded-[24px] shadow-sm flex flex-col items-center text-center gap-3 active:scale-95 transition-all"
+                  >
+                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><Calendar size={20}/></div>
+                    <span className="text-xs font-black text-emerald-950 uppercase">Thực đơn ngày</span>
+                  </button>
+                  <button onClick={() => setShowCookOptions(false)} className="col-span-2 text-center text-xs text-gray-400 font-bold py-2">Đóng lại</button>
+                </div>
+              )}
             </div>
-            <Sparkles size={140} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 group-hover:scale-110 transition-transform duration-1000" />
+
+            <button 
+              onClick={() => onNavigate('eat-out')}
+              className="bg-white p-6 rounded-[32px] border border-orange-100 flex flex-col gap-5 shadow-sm hover:shadow-md transition-all active:scale-95 col-span-2"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shadow-inner">
+                  <Store size={28} />
+                </div>
+                <div className="text-left space-y-1">
+                  <p className="text-lg font-black text-emerald-950 uppercase">Ăn bên ngoài</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nhập món / Chụp ảnh</p>
+                </div>
+              </div>
+            </button>
           </div>
         )}
       </section>
@@ -131,7 +171,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
           onClick={() => onNavigate('shopping')}
           className="bg-white p-6 rounded-[32px] border border-emerald-50 flex flex-col gap-5 shadow-sm hover:shadow-md transition-all active:scale-95"
         >
-          <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shadow-inner">
+          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner">
              <ShoppingBag size={24} />
           </div>
           <div className="text-left space-y-0.5">
@@ -153,26 +193,6 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, dailyLog, onNavigate, ha
           </div>
         </button>
       </section>
-
-      {hasLastSuggestions && !activeCookingMeal && (
-        <section 
-          onClick={() => onNavigate('meal-suggestions')}
-          className="bg-emerald-50 p-6 rounded-[32px] flex items-center justify-between group cursor-pointer border border-emerald-100/50 hover:bg-emerald-100 transition-colors"
-        >
-           <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm">
-                <Sparkles size={18} />
-              </div>
-              <div className="space-y-0.5">
-                 <p className="text-sm font-black text-emerald-900 uppercase tracking-tight">Xem thực đơn cũ</p>
-                 <p className="text-[10px] text-emerald-600 font-bold italic">Tiết kiệm thời gian của bạn</p>
-              </div>
-           </div>
-           <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:translate-x-1 transition-transform">
-              <ChevronRight size={18} />
-           </div>
-        </section>
-      )}
     </div>
   );
 };

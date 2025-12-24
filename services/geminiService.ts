@@ -142,6 +142,90 @@ export const getDishesFromIngredients = async (profile: UserProfile, ingredients
   }
 };
 
+export const generateDailyPlan = async (profile: UserProfile) => {
+  const ai = getAIClient();
+  const prompt = `Tạo thực đơn 3 bữa (Sáng, Trưa, Tối) hoàn chỉnh cho 1 ngày.
+  Phong cách: Miền ${profile.region}.
+  Mục tiêu: ${profile.goal}. 
+  Khẩu vị: ${profile.flavors.join(", ")}.
+  Tổng calo mục tiêu: ${profile.calorieGoal || 2000}.
+  Yêu cầu trả về JSON mảng 3 món ăn chi tiết.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            meals: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  type: { type: Type.STRING, enum: ['Bữa sáng', 'Bữa trưa', 'Bữa tối'] },
+                  description: { type: Type.STRING },
+                  estimatedTime: { type: Type.STRING },
+                  difficulty: { type: Type.STRING },
+                  ingredientsFound: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  ingredientsMissing: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        name: { type: Type.STRING },
+                        estimatedPrice: { type: Type.NUMBER }
+                      },
+                      required: ["name", "estimatedPrice"]
+                    }
+                  },
+                  calories: { type: Type.NUMBER },
+                  hackTip: { type: Type.STRING },
+                  recipeSteps: { type: Type.ARRAY, items: { type: Type.STRING } }
+                },
+                required: ["name", "type", "description", "calories", "hackTip"]
+              }
+            }
+          },
+          required: ["meals"]
+        }
+      }
+    });
+    return JSON.parse(response.text).meals;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const estimateCaloriesFromText = async (text: string) => {
+  const ai = getAIClient();
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Ước tính calo và thông tin dinh dưỡng cho món ăn: "${text}". Nếu không phải món ăn, trả về null. Trả về JSON.`,
+      config: { 
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            calories: { type: Type.NUMBER },
+            hackTip: { type: Type.STRING, description: "Nhận xét ngắn về độ healthy của món này" }
+          },
+          required: ["name", "calories", "hackTip"]
+        }
+      }
+    });
+    return JSON.parse(response.text);
+  } catch (error) {
+    return null;
+  }
+};
+
 export const recognizeMealFromPhoto = async (base64Image: string) => {
   const ai = getAIClient();
   try {

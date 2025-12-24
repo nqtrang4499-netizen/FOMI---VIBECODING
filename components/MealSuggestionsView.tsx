@@ -4,7 +4,7 @@ import { Meal, DailyLog } from '../types';
 import { 
   Sparkles, Clock, Zap, Plus, CheckCircle, ChevronRight, 
   ChefHat, X, RotateCcw, ShoppingCart, Flame, Lightbulb, 
-  ArrowRight, BookOpen, AlertCircle
+  ArrowRight, BookOpen, AlertCircle, Calendar
 } from 'lucide-react';
 
 interface MealSuggestionsViewProps {
@@ -28,6 +28,8 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
     onAddMeal(meal, hasMissing);
     setSelectedMeal(null);
   };
+  
+  const isDailyPlan = suggestions.length === 3 && suggestions.some(s => s.type === 'Bữa sáng');
 
   return (
     <div className="px-6 py-4 space-y-8 animate-in slide-in-from-right duration-500 pb-28">
@@ -116,7 +118,7 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
                    className="w-full py-5 bg-emerald-600 text-white font-extrabold rounded-2xl flex items-center justify-center gap-3 shadow-2xl shadow-emerald-200 active:scale-95 transition-all text-sm uppercase tracking-wider"
                  >
                     <ChefHat size={20} />
-                    {selectedMeal.ingredientsMissing?.length > 0 ? "Đi chợ & Nấu ngay" : "Bắt đầu nấu ngay"}
+                    {isDailyPlan ? "Lưu món này vào thực đơn" : (selectedMeal.ingredientsMissing?.length > 0 ? "Đi chợ & Nấu ngay" : "Bắt đầu nấu ngay")}
                  </button>
               </div>
             </div>
@@ -127,8 +129,9 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
       {/* Suggestion Grid */}
       <section className="space-y-6">
         <div className="flex justify-between items-end">
-          <h2 className="text-2xl font-extrabold text-emerald-950">
-             Gợi ý món ngon <Sparkles size={20} className="inline text-emerald-500 ml-1" />
+          <h2 className="text-2xl font-extrabold text-emerald-950 flex items-center gap-2">
+             {isDailyPlan ? <Calendar className="text-emerald-500" /> : <Sparkles className="text-emerald-500" />}
+             {isDailyPlan ? 'Thực đơn hôm nay' : 'Gợi ý món ngon'}
           </h2>
         </div>
         
@@ -149,6 +152,9 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
                          alt="" 
                        />
                        <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
+                       <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] text-white font-black uppercase tracking-wider">
+                          {item.type || 'Gợi ý'}
+                       </div>
                        {isSelected && (
                          <div className="absolute inset-0 bg-emerald-600/60 backdrop-blur-[2px] flex items-center justify-center animate-in zoom-in">
                            <CheckCircle size={32} className="text-white drop-shadow-lg" />
@@ -189,7 +195,7 @@ const MealSuggestionsView: React.FC<MealSuggestionsViewProps> = ({ suggestions, 
           onClick={onRegenerate}
           className="w-full py-4.5 bg-white border-2 border-emerald-50 text-emerald-600 font-extrabold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-[11px] uppercase tracking-wider"
         >
-           <RotateCcw size={16} /> Thay đổi lựa chọn khác
+           <RotateCcw size={16} /> {isDailyPlan ? "Tạo thực đơn khác" : "Thay đổi lựa chọn khác"}
         </button>
         <p className="text-[10px] text-gray-400 font-bold text-center px-6 leading-relaxed">
           Fomi dựa trên sở thích miền <b>{dailyLog.meals[0]?.type || 'Nam'}</b> và mục tiêu <b>Healthy</b> của bạn để gợi ý.
