@@ -279,6 +279,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <div className="w-full">
                          <input 
                             type="text" 
+                            autoComplete="off"
                             placeholder="Nhập tên của bạn..." 
                             className="w-full bg-white border-2 border-emerald-50 rounded-[24px] px-6 py-4 text-center text-lg font-black focus:border-emerald-500 outline-none shadow-sm transition-all text-emerald-950 placeholder:text-gray-300"
                             onChange={(e) => setData({ ...data, name: e.target.value })}

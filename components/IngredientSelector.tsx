@@ -98,6 +98,7 @@ const IngredientSelector: React.FC<IngredientSelectorProps> = ({ profile, onResu
             <input 
               type="text" 
               value={input}
+              autoComplete="off"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addWanted(input)}
               placeholder="Thịt bò, nấm, đậu hũ..." 

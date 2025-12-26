@@ -110,6 +110,7 @@ const EatOutInput: React.FC<EatOutInputProps> = ({ onBack, onConfirm }) => {
                     <input 
                         type="text" 
                         value={textInput}
+                        autoComplete="off"
                         onChange={(e) => setTextInput(e.target.value)}
                         placeholder="Ví dụ: Cơm tấm sườn bì..."
                         className="w-full p-4 bg-white border-2 border-emerald-50 rounded-[20px] font-bold text-emerald-950 placeholder:font-medium outline-none focus:border-emerald-500 transition-all shadow-sm text-sm"

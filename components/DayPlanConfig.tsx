@@ -177,6 +177,7 @@ const DayPlanConfig: React.FC<DayPlanConfigProps> = ({ profile, onBack, onConfir
                     <input 
                         type="text" 
                         value={inputValue}
+                        autoComplete="off"
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && addIngredient(inputValue)}
                         placeholder="Nhập hoặc chụp ảnh..."

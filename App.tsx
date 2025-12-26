@@ -35,23 +35,18 @@ const App: React.FC = () => {
   
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [activeCookingMeal, setActiveCookingMeal] = useState<Meal | null>(null);
-  const [lastUsedIngredients, setLastUsedIngredients] = useState<IngredientInput[]>([]);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('fomi_profile');
     const savedCart = localStorage.getItem('fomi_shopping_cart');
     const savedLog = localStorage.getItem('fomi_daily_log');
-    const savedSuggestions = localStorage.getItem('fomi_last_suggestions');
     const savedCooking = localStorage.getItem('fomi_active_cooking');
-    const savedIngs = localStorage.getItem('fomi_last_ings');
     const savedPastLogs = localStorage.getItem('fomi_past_logs');
     
     if (savedProfile) setUserProfile(JSON.parse(savedProfile));
     if (savedCart) setShoppingCart(JSON.parse(savedCart));
-    if (savedSuggestions) setAiSuggestions(JSON.parse(savedSuggestions));
     if (savedCooking) setActiveCookingMeal(JSON.parse(savedCooking));
-    if (savedIngs) setLastUsedIngredients(JSON.parse(savedIngs));
     if (savedPastLogs) setPastLogs(JSON.parse(savedPastLogs));
     
     if (savedLog) {
@@ -80,14 +75,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('fomi_daily_log', JSON.stringify(dailyLog));
   }, [dailyLog]);
-
-  useEffect(() => {
-    localStorage.setItem('fomi_last_suggestions', JSON.stringify(aiSuggestions));
-  }, [aiSuggestions]);
-
-  useEffect(() => {
-    localStorage.setItem('fomi_last_ings', JSON.stringify(lastUsedIngredients));
-  }, [lastUsedIngredients]);
 
   useEffect(() => {
     if (activeCookingMeal) {
@@ -301,7 +288,6 @@ const App: React.FC = () => {
             profile={userProfile}
             onResults={(results, usedIngs) => {
               setAiSuggestions(results);
-              setLastUsedIngredients(usedIngs);
               setCurrentView('meal-suggestions');
             }}
           />
